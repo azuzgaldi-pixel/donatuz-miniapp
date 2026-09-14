@@ -1,0 +1,269 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #080b12;
+    color: white;
+}
+
+.app {
+    max-width: 650px;
+    margin: auto;
+    padding: 18px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 22px;
+}
+
+.logo {
+    font-size: 27px;
+    font-weight: 900;
+    letter-spacing: 1px;
+}
+
+.logo span {
+    color: #6c63ff;
+}
+
+.subtitle {
+    color: #858b9c;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 15px;
+    background: #171b27;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 23px;
+}
+
+.hero {
+    min-height: 180px;
+    border-radius: 25px;
+    padding: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #151a35, #24204d);
+    margin-bottom: 25px;
+    overflow: hidden;
+}
+
+.hero h1 {
+    font-size: 30px;
+    line-height: 1.1;
+    margin-bottom: 12px;
+}
+
+.hero p {
+    color: #aeb3c2;
+    line-height: 1.5;
+}
+
+.hero-icon {
+    font-size: 70px;
+}
+
+h2 {
+    margin: 25px 0 14px;
+}
+
+.service-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.service-card {
+    border-radius: 18px;
+    padding: 17px;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.service-card:active {
+    transform: scale(.97);
+}
+
+.stars {
+    background: linear-gradient(135deg, #392c00, #18150a);
+}
+
+.premium {
+    background: linear-gradient(135deg, #24204c, #11101d);
+}
+
+.service-icon {
+    font-size: 30px;
+}
+
+.service-card b {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.service-card span {
+    font-size: 12px;
+    color: #9da3b5;
+}
+
+.games {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 11px;
+}
+
+.game {
+    background: #121722;
+    border: 1px solid #202635;
+    border-radius: 17px;
+    padding: 15px;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.game:active {
+    transform: scale(.97);
+}
+
+.game-icon {
+    font-size: 30px;
+    margin-bottom: 9px;
+}
+
+.game-name {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.back {
+    background: #171c28;
+    border: 0;
+    color: white;
+    padding: 11px 16px;
+    border-radius: 12px;
+    margin-bottom: 18px;
+    cursor: pointer;
+}
+
+label {
+    display: block;
+    color: #9da3b5;
+    margin: 20px 0 8px;
+}
+
+input {
+    width: 100%;
+    background: #121722;
+    border: 1px solid #293044;
+    color: white;
+    padding: 15px;
+    border-radius: 14px;
+    outline: none;
+    font-size: 15px;
+}
+
+.package {
+    background: #121722;
+    border: 1px solid #252c3c;
+    padding: 16px;
+    margin-bottom: 10px;
+    border-radius: 14px;
+    cursor: pointer;
+}
+
+.package.selected {
+    border-color: #6c63ff;
+    background: #19172d;
+}
+
+.package-name {
+    font-weight: bold;
+}
+
+.package-price {
+    color: #8f88ff;
+    margin-top: 5px;
+}
+
+.main-button {
+    width: 100%;
+    border: 0;
+    padding: 16px;
+    border-radius: 15px;
+    background: #6c63ff;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    margin-top: 15px;
+    cursor: pointer;
+}
+
+.hidden {
+    display: none;
+}
+
+.service-page-box {
+    background: #121722;
+    padding: 25px;
+    border-radius: 20px;
+}
+
+.service-page-box h1 {
+    margin-bottom: 12px;
+}
+
+.service-page-box p {
+    color: #9da3b5;
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+
+footer {
+    text-align: center;
+    margin: 35px 0 10px;
+    color: #777d8e;
+}
+
+footer span {
+    display: block;
+    font-weight: bold;
+    color: white;
+}
+
+footer small {
+    display: block;
+    margin-top: 5px;
+}
+
+@media (max-width: 450px) {
+
+    .service-grid,
+    .games {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .hero h1 {
+        font-size: 25px;
+    }
+
+    .hero-icon {
+        font-size: 48px;
+    }
+}
