@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+    >
+
+    <title>DonatUZ</title>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+<div class="app">
+
+    <header class="header">
+        <div>
+            <div class="logo">DONAT<span>UZ</span></div>
+            <div class="subtitle">Games • Stars • Premium</div>
+        </div>
+
+        <div class="avatar">🎮</div>
+    </header>
+
+
+    <section class="hero">
+
+        <div class="hero-text">
+            <h1>Donat qilish<br>endi juda oson.</h1>
+
+            <p>
+                Sevimli o‘yinlaringizga tez va qulay
+                tarzda donat qiling.
+            </p>
+        </div>
+
+        <div class="hero-icon">⚡</div>
+
+    </section>
+
+
+    <h2>Xizmatlar</h2>
+
+    <div class="service-grid">
+
+        <div class="service-card stars" onclick="openService('stars')">
+            <div class="service-icon">⭐</div>
+            <div>
+                <b>Telegram Stars</b>
+                <span>Stars sotib olish</span>
+            </div>
+        </div>
+
+        <div class="service-card premium" onclick="openService('premium')">
+            <div class="service-icon">💎</div>
+            <div>
+                <b>Telegram Premium</b>
+                <span>Premium sotib olish</span>
+            </div>
+        </div>
+
+    </div>
+
+
+    <h2>🎮 O‘yinlar</h2>
+
+    <div id="games" class="games"></div>
+
+
+    <div id="gamePage" class="hidden">
+
+        <button class="back" onclick="closeGame()">
+            ← Orqaga
+        </button>
+
+        <div id="selectedGame"></div>
+
+        <label>Player ID / UID</label>
+
+        <input
+            id="playerId"
+            placeholder="Player ID ni kiriting"
+        >
+
+        <h3>Paketni tanlang</h3>
+
+        <div id="packages"></div>
+
+        <button
+            class="main-button"
+            onclick="createOrder()"
+        >
+            Davom etish
+        </button>
+
+    </div>
+
+
+    <div id="servicePage" class="hidden">
+
+        <button class="back" onclick="closeService()">
+            ← Orqaga
+        </button>
+
+        <div id="serviceContent"></div>
+
+    </div>
+
+
+    <footer>
+        <span>DonatUZ</span>
+        <small>Fast • Simple • Secure</small>
+    </footer>
+
+</div>
+
+<script src="/app.js"></script>
+
+</body>
+</html>
