@@ -1,6 +1,7 @@
-// =========================================================
-// TELEGRAM
-// =========================================================
+// ======================================================
+// DONATUZ MINI APP
+// AUTO GAME ICON SYSTEM
+// ======================================================
 
 const tg = window.Telegram.WebApp;
 
@@ -8,9 +9,9 @@ tg.ready();
 tg.expand();
 
 
-// =========================================================
-// USER
-// =========================================================
+// ======================================================
+// TELEGRAM USER
+// ======================================================
 
 const telegramUser = tg.initDataUnsafe?.user || {};
 
@@ -19,85 +20,33 @@ const USERNAME = telegramUser.username || "";
 const FIRST_NAME = telegramUser.first_name || "User";
 
 
-// Avatar
+// ======================================================
+// ELEMENTS
+// ======================================================
 
-const avatarElement =
-    document.getElementById("userAvatar");
+const gamesGrid = document.getElementById("gamesGrid");
+const telegramGrid = document.getElementById("telegramGrid");
 
-if (telegramUser.photo_url) {
+const searchInput = document.getElementById("searchInput");
 
-    avatarElement.innerHTML = `
-        <img
-            src="${telegramUser.photo_url}"
-            style="
-                width:100%;
-                height:100%;
-                border-radius:50%;
-                object-fit:cover;
-            "
-        >
-    `;
+const gamesSection = document.getElementById("gamesSection");
+const telegramSection = document.getElementById("telegramSection");
 
-} else {
+const modal = document.getElementById("modal");
+const closeModal = document.getElementById("closeModal");
 
-    avatarElement.textContent =
-        FIRST_NAME
-            .charAt(0)
-            .toUpperCase();
+const modalIcon = document.getElementById("modalIcon");
+const modalTitle = document.getElementById("modalTitle");
+const modalDescription = document.getElementById("modalDescription");
 
-}
+const playerId = document.getElementById("playerId");
+const priceList = document.getElementById("priceList");
+const orderButton = document.getElementById("orderButton");
 
 
-// =========================================================
-// ELEMENTLAR
-// =========================================================
-
-const gamesGrid =
-    document.getElementById("gamesGrid");
-
-const telegramGrid =
-    document.getElementById("telegramGrid");
-
-const searchInput =
-    document.getElementById("searchInput");
-
-const gamesSection =
-    document.getElementById("gamesSection");
-
-const telegramSection =
-    document.getElementById("telegramSection");
-
-const modal =
-    document.getElementById("modal");
-
-const closeModal =
-    document.getElementById("closeModal");
-
-const modalTitle =
-    document.getElementById("modalTitle");
-
-const modalDescription =
-    document.getElementById("modalDescription");
-
-const modalIcon =
-    document.getElementById("modalIcon");
-
-const playerId =
-    document.getElementById("playerId");
-
-const priceList =
-    document.getElementById("priceList");
-
-const orderButton =
-    document.getElementById("orderButton");
-
-const loading =
-    document.getElementById("loading");
-
-
-// =========================================================
+// ======================================================
 // DATA
-// =========================================================
+// ======================================================
 
 let games = [];
 let products = [];
@@ -107,261 +56,169 @@ let selectedProduct = null;
 let selectedPrice = null;
 
 
-// =========================================================
+// ======================================================
 // ICON CACHE
-// =========================================================
+// ======================================================
 
 const iconCache = {};
 
 
-// =========================================================
-// APP STORE'DAN IKONKA QIDIRISH
-// =========================================================
+// ======================================================
+// GAME ICON SEARCH NAMES
+// ======================================================
 
-async function getGameIcon(searchName) {
+const ICON_NAMES = {
 
-    if (iconCache[searchName]) {
-        return iconCache[searchName];
-    }
+    "pubg":
+        "PUBG MOBILE",
 
-    try {
+    "freefire":
+        "Free Fire",
 
-        const url =
-            "https://itunes.apple.com/search?term=" +
-            encodeURIComponent(searchName) +
-            "&entity=software&limit=10&country=US";
+    "mlbb":
+        "Mobile Legends: Bang Bang",
 
-        const response =
-            await fetch(url);
+    "brawlstars":
+        "Brawl Stars",
 
-        const data =
-            await response.json();
+    "roblox":
+        "Roblox",
 
-        if (
-            data.results &&
-            data.results.length > 0
-        ) {
+    "coc":
+        "Clash of Clans",
 
-            // Eng mos natijani topishga harakat qilamiz
+    "cr":
+        "Clash Royale",
 
-            const searchLower =
-                searchName.toLowerCase();
+    "standoff2":
+        "Standoff 2",
 
-            let result =
-                data.results.find(item =>
-                    (
-                        item.trackName ||
-                        ""
-                    )
-                    .toLowerCase()
-                    .includes(searchLower)
-                );
+    "codm":
+        "Call of Duty Mobile",
 
-            // Agar aniq topilmasa birinchi natija
+    "fcmobile":
+        "EA SPORTS FC Mobile",
 
-            if (!result) {
-                result = data.results[0];
-            }
+    "efootball":
+        "eFootball",
 
-            let icon =
-                result.artworkUrl512 ||
-                result.artworkUrl100 ||
-                result.artworkUrl60;
+    "genshin":
+        "Genshin Impact",
 
-            if (icon) {
+    "hsr":
+        "Honkai: Star Rail",
 
-                // 100x100 bo'lsa katta versiyasini olish
+    "valorant":
+        "VALORANT",
 
-                icon = icon
-                    .replace(
-                        "100x100",
-                        "512x512"
-                    )
-                    .replace(
-                        "100x100bb",
-                        "512x512bb"
-                    );
+    "lol":
+        "League of Legends",
 
-                iconCache[searchName] =
-                    icon;
+    "fortnite":
+        "Fortnite",
 
-                return icon;
-            }
-        }
+    "minecraft":
+        "Minecraft",
 
-    } catch (error) {
+    "arena":
+        "Arena Breakout",
 
-        console.log(
-            "Icon loading error:",
-            error
-        );
-    }
+    "deltaforce":
+        "Delta Force",
 
-    return null;
-}
+    "steam":
+        "Steam"
+
+};
 
 
-// =========================================================
-// O'YINLARNI YUKLASH
-// =========================================================
+// ======================================================
+// FALLBACK ICONS
+// ======================================================
 
-async function loadGames() {
+const FALLBACK_ICONS = {
 
-    try {
+    "pubg": "🎯",
+    "freefire": "🔥",
+    "mlbb": "⚔️",
+    "brawlstars": "⭐",
+    "roblox": "🟥",
+    "coc": "🏰",
+    "cr": "👑",
+    "standoff2": "🔫",
+    "codm": "🎖️",
+    "fcmobile": "⚽",
+    "efootball": "⚽",
+    "genshin": "🌟",
+    "hsr": "🚂",
+    "valorant": "🎯",
+    "lol": "⚔️",
+    "fortnite": "🛡️",
+    "minecraft": "⛏️",
+    "arena": "🎯",
+    "deltaforce": "🎖️",
+    "steam": "🎮"
 
-        const response =
-            await fetch("/api/games");
-
-        games =
-            await response.json();
-
-        renderGames(games);
-
-    } catch (error) {
-
-        console.error(error);
-
-        gamesGrid.innerHTML = `
-            <div style="
-                grid-column:1/-1;
-                text-align:center;
-                color:#8892a6;
-                padding:30px;
-            ">
-                O'yinlarni yuklashda xatolik.
-            </div>
-        `;
-    }
-}
+};
 
 
-// =========================================================
-// O'YINLARNI CHIQARISH
-// =========================================================
-
-function renderGames(list) {
-
-    gamesGrid.innerHTML = "";
-
-    list.forEach(game => {
-
-        const card =
-            document.createElement("div");
-
-        card.className =
-            "game-card";
-
-        card.innerHTML = `
-
-            <img
-                class="game-icon"
-                id="icon-${game.id}"
-                src=""
-                alt="${game.name}"
-            >
-
-            <div>
-                <div class="game-name">
-                    ${game.name}
-                </div>
-
-                <div class="game-small">
-                    Donat qilish
-                </div>
-            </div>
-
-        `;
-
-        gamesGrid.appendChild(card);
-
-        card.addEventListener(
-            "click",
-            () => openGame(game)
-        );
-
-        // Avtomatik ikonka
-
-        loadIconForGame(game);
-    });
-}
-
-
-// =========================================================
-// IKONKANI INTERNETDAN OLISH
-// =========================================================
-
-async function loadIconForGame(game) {
-
-    const img =
-        document.getElementById(
-            `icon-${game.id}`
-        );
-
-    if (!img) return;
-
-    // vaqtinchalik loading
-
-    img.src =
-        createPlaceholder(game.name);
-
-    const icon =
-        await getGameIcon(
-            game.icon_search
-        );
-
-    if (icon) {
-
-        img.src = icon;
-
-    } else {
-
-        // ikonka topilmasa harf bilan
-
-        img.src =
-            createPlaceholder(
-                game.name
-            );
-    }
-}
-
-
-// =========================================================
+// ======================================================
 // PLACEHOLDER
-// =========================================================
+// ======================================================
 
-function createPlaceholder(name) {
+function makePlaceholder(game) {
 
-    const letter =
-        name
-            .trim()
-            .charAt(0)
-            .toUpperCase();
+    const emoji =
+        FALLBACK_ICONS[game.id] || "🎮";
 
     const svg = `
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="200"
-            height="200"
-        >
-            <rect
-                width="200"
-                height="200"
-                rx="35"
-                fill="#26314a"
-            />
+    <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="512"
+        height="512"
+    >
 
-            <text
-                x="100"
-                y="125"
-                text-anchor="middle"
-                font-size="90"
-                fill="white"
-                font-family="Arial"
-                font-weight="bold"
+        <defs>
+
+            <linearGradient
+                id="bg"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="100%"
             >
-                ${letter}
-            </text>
-        </svg>
+
+                <stop
+                    offset="0%"
+                    stop-color="#263d85"
+                />
+
+                <stop
+                    offset="100%"
+                    stop-color="#111827"
+                />
+
+            </linearGradient>
+
+        </defs>
+
+        <rect
+            width="512"
+            height="512"
+            rx="100"
+            fill="url(#bg)"
+        />
+
+        <text
+            x="256"
+            y="320"
+            text-anchor="middle"
+            font-size="190"
+        >
+            ${emoji}
+        </text>
+
+    </svg>
     `;
 
     return (
@@ -371,9 +228,307 @@ function createPlaceholder(name) {
 }
 
 
-// =========================================================
-// TELEGRAM MAHSULOTLARI
-// =========================================================
+// ======================================================
+// GET ICON FROM APP STORE
+// ======================================================
+
+async function getIcon(game) {
+
+    if (iconCache[game.id]) {
+        return iconCache[game.id];
+    }
+
+    const searchName =
+        ICON_NAMES[game.id] ||
+        game.name;
+
+    try {
+
+        const url =
+            "https://itunes.apple.com/search" +
+            "?term=" +
+            encodeURIComponent(searchName) +
+            "&entity=software" +
+            "&limit=10" +
+            "&country=US";
+
+        const response =
+            await fetch(url, {
+                method: "GET"
+            });
+
+        if (!response.ok) {
+            throw new Error("Icon API error");
+        }
+
+        const data =
+            await response.json();
+
+        if (
+            !data.results ||
+            data.results.length === 0
+        ) {
+
+            return null;
+        }
+
+
+        // ------------------------------------------------
+        // ENG MOS NATIJANI QIDIRISH
+        // ------------------------------------------------
+
+        const wanted =
+            searchName
+                .toLowerCase()
+                .replace(/[^a-z0-9]/g, "");
+
+
+        let result =
+            data.results.find(item => {
+
+                const title =
+                    (
+                        item.trackName ||
+                        ""
+                    )
+                    .toLowerCase()
+                    .replace(
+                        /[^a-z0-9]/g,
+                        ""
+                    );
+
+                return (
+                    title.includes(wanted) ||
+                    wanted.includes(title)
+                );
+
+            });
+
+
+        // topilmasa birinchi natija
+
+        if (!result) {
+
+            result =
+                data.results[0];
+
+        }
+
+
+        let icon =
+            result.artworkUrl512 ||
+            result.artworkUrl100 ||
+            result.artworkUrl60;
+
+
+        if (!icon) {
+            return null;
+        }
+
+
+        // katta rasmga o'tkazish
+
+        icon =
+            icon
+                .replace(
+                    "100x100",
+                    "512x512"
+                )
+                .replace(
+                    "100x100bb",
+                    "512x512bb"
+                )
+                .replace(
+                    "60x60",
+                    "512x512"
+                );
+
+
+        iconCache[game.id] =
+            icon;
+
+        return icon;
+
+    } catch (error) {
+
+        console.log(
+            "ICON ERROR:",
+            game.name,
+            error
+        );
+
+        return null;
+    }
+
+}
+
+
+// ======================================================
+// LOAD ONE GAME ICON
+// ======================================================
+
+async function loadGameIcon(game) {
+
+    const image =
+        document.getElementById(
+            "game-icon-" + game.id
+        );
+
+    if (!image) {
+        return;
+    }
+
+
+    // Avval chiroyli placeholder
+
+    image.src =
+        makePlaceholder(game);
+
+
+    // Internetdan haqiqiy icon
+
+    const icon =
+        await getIcon(game);
+
+
+    if (icon) {
+
+        image.src =
+            icon;
+
+    }
+
+}
+
+
+// ======================================================
+// LOAD GAMES
+// ======================================================
+
+async function loadGames() {
+
+    try {
+
+        const response =
+            await fetch("/api/games");
+
+        if (!response.ok) {
+            throw new Error(
+                "Games API error"
+            );
+        }
+
+        games =
+            await response.json();
+
+
+        renderGames(games);
+
+    } catch (error) {
+
+        console.error(error);
+
+        gamesGrid.innerHTML = `
+            <div
+                style="
+                    grid-column:1/-1;
+                    text-align:center;
+                    padding:30px;
+                    color:#8c96aa;
+                "
+            >
+                O'yinlarni yuklashda xatolik.
+            </div>
+        `;
+
+    }
+
+}
+
+
+// ======================================================
+// RENDER GAMES
+// ======================================================
+
+function renderGames(list) {
+
+    gamesGrid.innerHTML = "";
+
+
+    if (!list.length) {
+
+        gamesGrid.innerHTML = `
+            <div
+                style="
+                    grid-column:1/-1;
+                    text-align:center;
+                    padding:30px;
+                    color:#8c96aa;
+                "
+            >
+                O'yin topilmadi.
+            </div>
+        `;
+
+        return;
+    }
+
+
+    list.forEach(game => {
+
+        const card =
+            document.createElement("div");
+
+        card.className =
+            "game-card";
+
+
+        card.innerHTML = `
+
+            <img
+                class="game-icon"
+                id="game-icon-${game.id}"
+                src="${makePlaceholder(game)}"
+                alt="${game.name}"
+            >
+
+            <div>
+
+                <div class="game-name">
+                    ${game.name}
+                </div>
+
+                <div class="game-small">
+                    Donat qilish
+                </div>
+
+            </div>
+
+        `;
+
+
+        gamesGrid.appendChild(card);
+
+
+        card.addEventListener(
+            "click",
+            () => openGame(game)
+        );
+
+
+        // MUHIM:
+        // Internetdan icon olamiz
+
+        loadGameIcon(game);
+
+    });
+
+}
+
+
+// ======================================================
+// LOAD PRODUCTS
+// ======================================================
 
 async function loadProducts() {
 
@@ -390,17 +545,20 @@ async function loadProducts() {
     } catch (error) {
 
         console.error(error);
+
     }
+
 }
 
 
-// =========================================================
-// TELEGRAM CARD
-// =========================================================
+// ======================================================
+// TELEGRAM PRODUCTS
+// ======================================================
 
 function renderTelegram(list) {
 
     telegramGrid.innerHTML = "";
+
 
     list.forEach(product => {
 
@@ -409,6 +567,7 @@ function renderTelegram(list) {
 
         card.className =
             "telegram-card";
+
 
         card.innerHTML = `
 
@@ -430,19 +589,24 @@ function renderTelegram(list) {
 
         `;
 
+
         card.addEventListener(
             "click",
-            () => openTelegramProduct(product)
+            () =>
+                openTelegramProduct(product)
         );
 
+
         telegramGrid.appendChild(card);
+
     });
+
 }
 
 
-// =========================================================
-// O'YIN OCHISH
-// =========================================================
+// ======================================================
+// OPEN GAME
+// ======================================================
 
 function openGame(game) {
 
@@ -455,15 +619,23 @@ function openGame(game) {
     selectedPrice =
         null;
 
+
     modalTitle.textContent =
         game.name;
+
 
     modalDescription.textContent =
         "Player ID / UID raqamingizni kiriting";
 
+
+    playerId.style.display =
+        "block";
+
+
     modalIcon.innerHTML = `
+
         <img
-            src="${createPlaceholder(game.name)}"
+            src="${makePlaceholder(game)}"
             style="
                 width:65px;
                 height:65px;
@@ -471,17 +643,18 @@ function openGame(game) {
                 object-fit:cover;
             "
         >
+
     `;
 
-    // haqiqiy ikonka
 
-    getGameIcon(
-        game.icon_search
-    ).then(icon => {
+    // haqiqiy iconni modalga ham yuklaymiz
+
+    getIcon(game).then(icon => {
 
         if (icon) {
 
             modalIcon.innerHTML = `
+
                 <img
                     src="${icon}"
                     style="
@@ -491,18 +664,26 @@ function openGame(game) {
                         object-fit:cover;
                     "
                 >
+
             `;
+
         }
+
     });
 
-    playerId.value = "";
+
+    playerId.value =
+        "";
+
 
     priceList.innerHTML = `
 
-        <div class="price-item selected">
+        <div
+            class="price-item selected"
+        >
 
             <div class="price-left">
-                💎 Donat paketlari
+                💎 Donat paketi
             </div>
 
             <div class="price-right">
@@ -513,22 +694,26 @@ function openGame(game) {
 
     `;
 
+
     orderButton.textContent =
         "Buyurtma berish";
+
 
     modal.classList.remove(
         "hidden"
     );
+
 }
 
 
-// =========================================================
-// TELEGRAM PRODUCT
-// =========================================================
+// ======================================================
+// OPEN TELEGRAM PRODUCT
+// ======================================================
 
 function openTelegramProduct(product) {
 
-    selectedGame = null;
+    selectedGame =
+        null;
 
     selectedProduct =
         product;
@@ -536,21 +721,26 @@ function openTelegramProduct(product) {
     selectedPrice =
         null;
 
+
     modalTitle.textContent =
         product.name;
+
 
     modalDescription.textContent =
         product.description;
 
+
     modalIcon.innerHTML =
         product.icon;
 
-    playerId.value = "";
 
     playerId.style.display =
         "none";
 
-    priceList.innerHTML = "";
+
+    priceList.innerHTML =
+        "";
+
 
     product.prices.forEach(price => {
 
@@ -560,13 +750,17 @@ function openTelegramProduct(product) {
         item.className =
             "price-item";
 
+
+        const text =
+            product.id === "stars"
+                ? `${price.amount} ⭐ Stars`
+                : `${price.amount} oy`;
+
+
         item.innerHTML = `
 
             <div class="price-left">
-                ${price.amount}
-                ${product.id === "stars"
-                    ? "⭐ Stars"
-                    : " oy"}
+                ${text}
             </div>
 
             <div class="price-right">
@@ -576,6 +770,7 @@ function openTelegramProduct(product) {
 
         `;
 
+
         item.addEventListener(
             "click",
             () => {
@@ -584,48 +779,50 @@ function openTelegramProduct(product) {
                     .querySelectorAll(
                         ".price-item"
                     )
-                    .forEach(el =>
+                    .forEach(el => {
+
                         el.classList.remove(
                             "selected"
-                        )
-                    );
+                        );
+
+                    });
+
 
                 item.classList.add(
                     "selected"
                 );
 
+
                 selectedPrice =
                     price;
+
             }
         );
 
+
         priceList.appendChild(item);
+
     });
+
 
     orderButton.textContent =
         "Davom etish";
 
+
     modal.classList.remove(
         "hidden"
     );
+
 }
 
 
-// =========================================================
-// MODALNI YOPISH
-// =========================================================
+// ======================================================
+// CLOSE MODAL
+// ======================================================
 
 closeModal.addEventListener(
     "click",
-    () => {
-
-        modal.classList.add(
-            "hidden"
-        );
-
-        playerId.style.display =
-            "block";
-    }
+    closeModalWindow
 );
 
 
@@ -637,31 +834,42 @@ modal.addEventListener(
             event.target === modal
         ) {
 
-            modal.classList.add(
-                "hidden"
-            );
+            closeModalWindow();
 
-            playerId.style.display =
-                "block";
         }
+
     }
 );
 
 
-// =========================================================
-// BUYURTMA
-// =========================================================
+function closeModalWindow() {
+
+    modal.classList.add(
+        "hidden"
+    );
+
+    playerId.style.display =
+        "block";
+
+}
+
+
+// ======================================================
+// ORDER
+// ======================================================
 
 orderButton.addEventListener(
     "click",
     async () => {
 
-        // O'yin
+
+        // GAME
 
         if (selectedGame) {
 
             const uid =
                 playerId.value.trim();
+
 
             if (!uid) {
 
@@ -670,17 +878,21 @@ orderButton.addEventListener(
                 );
 
                 return;
+
             }
 
+
             tg.showAlert(
-                "Hozircha bu bo'lim demo rejimida."
+                "Bu bo'lim hozircha demo rejimida."
             );
 
+
             return;
+
         }
 
 
-        // Telegram
+        // TELEGRAM
 
         if (selectedProduct) {
 
@@ -691,35 +903,35 @@ orderButton.addEventListener(
                 );
 
                 return;
+
             }
 
-            // Hozircha demo
 
             tg.showAlert(
                 "To'lov tizimi keyingi bosqichda ulanadi."
             );
 
-            return;
         }
 
     }
 );
 
 
-// =========================================================
-// PUL FORMAT
-// =========================================================
+// ======================================================
+// MONEY
+// ======================================================
 
 function formatMoney(number) {
 
     return Number(number)
         .toLocaleString("uz-UZ");
+
 }
 
 
-// =========================================================
+// ======================================================
 // SEARCH
-// =========================================================
+// ======================================================
 
 searchInput.addEventListener(
     "input",
@@ -730,21 +942,26 @@ searchInput.addEventListener(
                 .toLowerCase()
                 .trim();
 
+
         const filtered =
-            games.filter(game =>
-                game.name
+            games.filter(game => {
+
+                return game.name
                     .toLowerCase()
-                    .includes(query)
-            );
+                    .includes(query);
+
+            });
+
 
         renderGames(filtered);
+
     }
 );
 
 
-// =========================================================
+// ======================================================
 // CATEGORY
-// =========================================================
+// ======================================================
 
 document
     .querySelectorAll(".category")
@@ -758,18 +975,23 @@ document
                     .querySelectorAll(
                         ".category"
                     )
-                    .forEach(btn =>
+                    .forEach(btn => {
+
                         btn.classList.remove(
                             "active"
-                        )
-                    );
+                        );
+
+                    });
+
 
                 button.classList.add(
                     "active"
                 );
 
+
                 const category =
                     button.dataset.category;
+
 
                 if (
                     category === "games"
@@ -782,7 +1004,7 @@ document
                         "none";
 
                     searchInput.style.display =
-                        "block";
+                        "flex";
 
                 } else {
 
@@ -794,15 +1016,32 @@ document
 
                     searchInput.style.display =
                         "none";
+
                 }
+
             }
         );
+
     });
 
 
-// =========================================================
+// ======================================================
 // START
-// =========================================================
+// ======================================================
 
 loadGames();
 loadProducts();
+
+
+// ======================================================
+// DEBUG
+// ======================================================
+
+console.log(
+    "DonatUZ Mini App started"
+);
+
+console.log(
+    "Telegram User:",
+    telegramUser
+);
