@@ -1,1047 +1,1094 @@
-// ======================================================
-// DONATUZ MINI APP
-// AUTO GAME ICON SYSTEM
-// ======================================================
+// ===============================
+// DonatUZ | Games & Stars
+// app.js
+// ===============================
 
-const tg = window.Telegram.WebApp;
+const tg = window.Telegram?.WebApp;
 
-tg.ready();
-tg.expand();
+if (tg) {
+    tg.ready();
+    tg.expand();
+    tg.setHeaderColor("#111827");
+    tg.setBackgroundColor("#0b1020");
+}
 
+// ===============================
+// USER
+// ===============================
 
-// ======================================================
-// TELEGRAM USER
-// ======================================================
+const TG_USER = tg?.initDataUnsafe?.user || {};
 
-const telegramUser = tg.initDataUnsafe?.user || {};
+const USER_ID = TG_USER.id || 0;
+const USERNAME = TG_USER.username || "";
 
-const USER_ID = telegramUser.id || 0;
-const USERNAME = telegramUser.username || "";
-const FIRST_NAME = telegramUser.first_name || "User";
+// ===============================
+// GAME LIST
+// ===============================
 
+const GAMES = [
+    { name: "PUBG Mobile", search: "PUBG MOBILE" },
+    { name: "Free Fire", search: "Free Fire" },
+    { name: "Mobile Legends", search: "Mobile Legends" },
+    { name: "Brawl Stars", search: "Brawl Stars" },
+    { name: "Roblox", search: "Roblox" },
+    { name: "Clash of Clans", search: "Clash of Clans" },
+    { name: "Clash Royale", search: "Clash Royale" },
+    { name: "Standoff 2", search: "Standoff 2" },
+    { name: "Call of Duty Mobile", search: "Call of Duty Mobile" },
+    { name: "FC Mobile", search: "EA SPORTS FC Mobile" },
+    { name: "eFootball", search: "eFootball" },
+    { name: "Genshin Impact", search: "Genshin Impact" },
+    { name: "Honkai: Star Rail", search: "Honkai Star Rail" },
+    { name: "Valorant", search: "VALORANT" },
+    { name: "League of Legends", search: "League of Legends" },
+    { name: "Fortnite", search: "Fortnite" },
+    { name: "Minecraft", search: "Minecraft" },
+    { name: "Arena Breakout", search: "Arena Breakout" },
+    { name: "Delta Force", search: "Delta Force" },
+    { name: "Steam", search: "Steam" }
+];
 
-// ======================================================
-// ELEMENTS
-// ======================================================
+// ===============================
+// TELEGRAM PRODUCTS
+// ===============================
 
-const gamesGrid = document.getElementById("gamesGrid");
-const telegramGrid = document.getElementById("telegramGrid");
+const PRODUCTS = [
+    {
+        id: "premium",
+        name: "Telegram Premium",
+        icon: "💎",
+        description: "Telegram Premium",
+        prices: [
+            { title: "1 oy", stars: 500 },
+            { title: "3 oy", stars: 1400 },
+            { title: "6 oy", stars: 2500 },
+            { title: "12 oy", stars: 4500 }
+        ]
+    },
 
-const searchInput = document.getElementById("searchInput");
+    {
+        id: "stars",
+        name: "Telegram Stars",
+        icon: "⭐",
+        description: "Telegram Stars"
+    }
+];
 
-const gamesSection = document.getElementById("gamesSection");
-const telegramSection = document.getElementById("telegramSection");
-
-const modal = document.getElementById("modal");
-const closeModal = document.getElementById("closeModal");
-
-const modalIcon = document.getElementById("modalIcon");
-const modalTitle = document.getElementById("modalTitle");
-const modalDescription = document.getElementById("modalDescription");
-
-const playerId = document.getElementById("playerId");
-const priceList = document.getElementById("priceList");
-const orderButton = document.getElementById("orderButton");
-
-
-// ======================================================
-// DATA
-// ======================================================
-
-let games = [];
-let products = [];
+// ===============================
+// STATE
+// ===============================
 
 let selectedGame = null;
 let selectedProduct = null;
 let selectedPrice = null;
 
+let gameIcons = {};
 
-// ======================================================
-// ICON CACHE
-// ======================================================
+// ===============================
+// DOM
+// ===============================
 
-const iconCache = {};
+const gamesContainer =
+    document.getElementById("games") ||
+    document.getElementById("gamesContainer") ||
+    document.querySelector(".games");
 
+const productsContainer =
+    document.getElementById("products") ||
+    document.getElementById("productsContainer") ||
+    document.querySelector(".products");
 
-// ======================================================
-// GAME ICON SEARCH NAMES
-// ======================================================
+const searchInput =
+    document.getElementById("search") ||
+    document.getElementById("searchInput");
 
-const ICON_NAMES = {
+const modal =
+    document.getElementById("modal") ||
+    document.getElementById("gameModal") ||
+    document.querySelector(".modal");
 
-    "pubg":
-        "PUBG MOBILE",
+const modalTitle =
+    document.getElementById("modalTitle") ||
+    document.querySelector(".modal-title");
 
-    "freefire":
-        "Free Fire",
+const playerId =
+    document.getElementById("playerId") ||
+    document.getElementById("uid") ||
+    document.querySelector('input[name="player_id"]');
 
-    "mlbb":
-        "Mobile Legends: Bang Bang",
+const orderButton =
+    document.getElementById("orderButton") ||
+    document.getElementById("payButton") ||
+    document.querySelector(".order-button");
 
-    "brawlstars":
-        "Brawl Stars",
+const closeButton =
+    document.getElementById("closeModal") ||
+    document.querySelector(".close-modal");
 
-    "roblox":
-        "Roblox",
+// ===============================
+// HELPERS
+// ===============================
 
-    "coc":
-        "Clash of Clans",
-
-    "cr":
-        "Clash Royale",
-
-    "standoff2":
-        "Standoff 2",
-
-    "codm":
-        "Call of Duty Mobile",
-
-    "fcmobile":
-        "EA SPORTS FC Mobile",
-
-    "efootball":
-        "eFootball",
-
-    "genshin":
-        "Genshin Impact",
-
-    "hsr":
-        "Honkai: Star Rail",
-
-    "valorant":
-        "VALORANT",
-
-    "lol":
-        "League of Legends",
-
-    "fortnite":
-        "Fortnite",
-
-    "minecraft":
-        "Minecraft",
-
-    "arena":
-        "Arena Breakout",
-
-    "deltaforce":
-        "Delta Force",
-
-    "steam":
-        "Steam"
-
-};
-
-
-// ======================================================
-// FALLBACK ICONS
-// ======================================================
-
-const FALLBACK_ICONS = {
-
-    "pubg": "🎯",
-    "freefire": "🔥",
-    "mlbb": "⚔️",
-    "brawlstars": "⭐",
-    "roblox": "🟥",
-    "coc": "🏰",
-    "cr": "👑",
-    "standoff2": "🔫",
-    "codm": "🎖️",
-    "fcmobile": "⚽",
-    "efootball": "⚽",
-    "genshin": "🌟",
-    "hsr": "🚂",
-    "valorant": "🎯",
-    "lol": "⚔️",
-    "fortnite": "🛡️",
-    "minecraft": "⛏️",
-    "arena": "🎯",
-    "deltaforce": "🎖️",
-    "steam": "🎮"
-
-};
-
-
-// ======================================================
-// PLACEHOLDER
-// ======================================================
-
-function makePlaceholder(game) {
-
-    const emoji =
-        FALLBACK_ICONS[game.id] || "🎮";
-
-    const svg = `
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="512"
-        height="512"
-    >
-
-        <defs>
-
-            <linearGradient
-                id="bg"
-                x1="0%"
-                y1="0%"
-                x2="100%"
-                y2="100%"
-            >
-
-                <stop
-                    offset="0%"
-                    stop-color="#263d85"
-                />
-
-                <stop
-                    offset="100%"
-                    stop-color="#111827"
-                />
-
-            </linearGradient>
-
-        </defs>
-
-        <rect
-            width="512"
-            height="512"
-            rx="100"
-            fill="url(#bg)"
-        />
-
-        <text
-            x="256"
-            y="320"
-            text-anchor="middle"
-            font-size="190"
-        >
-            ${emoji}
-        </text>
-
-    </svg>
-    `;
-
-    return (
-        "data:image/svg+xml;charset=UTF-8," +
-        encodeURIComponent(svg)
-    );
+function showAlert(message) {
+    if (tg?.showAlert) {
+        tg.showAlert(message);
+    } else {
+        alert(message);
+    }
 }
 
+function showPopup(message) {
+    if (tg?.showPopup) {
+        tg.showPopup({
+            title: "DonatUZ",
+            message: message,
+            buttons: [{ type: "ok" }]
+        });
+    } else {
+        alert(message);
+    }
+}
 
-// ======================================================
-// GET ICON FROM APP STORE
-// ======================================================
+function haptic(type = "light") {
+    try {
+        tg?.HapticFeedback?.impactOccurred(type);
+    } catch (e) {}
+}
 
-async function getIcon(game) {
+// ===============================
+// APPLE APP STORE ICON SEARCH
+// ===============================
 
-    if (iconCache[game.id]) {
-        return iconCache[game.id];
+async function getGameIcon(game) {
+    if (gameIcons[game.name]) {
+        return gameIcons[game.name];
     }
 
-    const searchName =
-        ICON_NAMES[game.id] ||
-        game.name;
-
     try {
-
         const url =
-            "https://itunes.apple.com/search" +
-            "?term=" +
-            encodeURIComponent(searchName) +
-            "&entity=software" +
-            "&limit=10" +
-            "&country=US";
+            "https://itunes.apple.com/search?term=" +
+            encodeURIComponent(game.search) +
+            "&entity=software&limit=10&country=US";
 
-        const response =
-            await fetch(url, {
-                method: "GET"
-            });
+        const response = await fetch(url);
 
         if (!response.ok) {
             throw new Error("Icon API error");
         }
 
-        const data =
-            await response.json();
+        const data = await response.json();
 
-        if (
-            !data.results ||
-            data.results.length === 0
-        ) {
+        if (data.results && data.results.length > 0) {
 
-            return null;
-        }
-
-
-        // ------------------------------------------------
-        // ENG MOS NATIJANI QIDIRISH
-        // ------------------------------------------------
-
-        const wanted =
-            searchName
-                .toLowerCase()
-                .replace(/[^a-z0-9]/g, "");
-
-
-        let result =
-            data.results.find(item => {
-
-                const title =
-                    (
-                        item.trackName ||
-                        ""
-                    )
-                    .toLowerCase()
-                    .replace(
-                        /[^a-z0-9]/g,
-                        ""
-                    );
+            // Avval eng mos natijani topishga harakat qilamiz
+            let result = data.results.find(item => {
+                const name = (item.trackName || "").toLowerCase();
+                const target = game.search.toLowerCase();
 
                 return (
-                    title.includes(wanted) ||
-                    wanted.includes(title)
+                    name.includes(target) ||
+                    target.includes(name)
                 );
+            });
+
+            if (!result) {
+                result = data.results[0];
+            }
+
+            const icon =
+                result.artworkUrl512 ||
+                result.artworkUrl100 ||
+                result.artworkUrl60;
+
+            if (icon) {
+                gameIcons[game.name] = icon;
+                return icon;
+            }
+        }
+
+    } catch (error) {
+        console.log("Icon yuklanmadi:", game.name, error);
+    }
+
+    return null;
+}
+
+// ===============================
+// CREATE GAME CARD
+// ===============================
+
+function createGameCard(game) {
+
+    const card = document.createElement("div");
+
+    card.className = "game-card";
+
+    card.innerHTML = `
+        <div class="game-icon-wrapper">
+            <img
+                class="game-icon"
+                src=""
+                alt="${game.name}"
+                loading="lazy"
+            >
+
+            <div class="game-placeholder">
+                🎮
+            </div>
+        </div>
+
+        <div class="game-name">
+            ${game.name}
+        </div>
+    `;
+
+    const img = card.querySelector(".game-icon");
+    const placeholder = card.querySelector(".game-placeholder");
+
+    getGameIcon(game).then(icon => {
+
+        if (icon) {
+            img.src = icon;
+
+            img.onload = () => {
+                img.style.display = "block";
+                placeholder.style.display = "none";
+            };
+
+            img.onerror = () => {
+                img.style.display = "none";
+                placeholder.style.display = "flex";
+            };
+
+        } else {
+            img.style.display = "none";
+            placeholder.style.display = "flex";
+        }
+
+    });
+
+    card.addEventListener("click", () => {
+        haptic("light");
+        openGameModal(game);
+    });
+
+    return card;
+}
+
+// ===============================
+// RENDER GAMES
+// ===============================
+
+function renderGames(list = GAMES) {
+
+    if (!gamesContainer) {
+        console.warn("Games container topilmadi");
+        return;
+    }
+
+    gamesContainer.innerHTML = "";
+
+    if (list.length === 0) {
+
+        gamesContainer.innerHTML = `
+            <div class="empty-state">
+                <div style="font-size:40px;">🔍</div>
+                <div>O‘yin topilmadi</div>
+            </div>
+        `;
+
+        return;
+    }
+
+    list.forEach(game => {
+        gamesContainer.appendChild(
+            createGameCard(game)
+        );
+    });
+}
+
+// ===============================
+// RENDER PRODUCTS
+// ===============================
+
+function renderProducts() {
+
+    if (!productsContainer) {
+        return;
+    }
+
+    productsContainer.innerHTML = "";
+
+    // PREMIUM
+    const premium = PRODUCTS.find(
+        p => p.id === "premium"
+    );
+
+    if (premium) {
+
+        const card = document.createElement("div");
+
+        card.className = "product-card";
+
+        card.innerHTML = `
+            <div class="product-icon">
+                ${premium.icon}
+            </div>
+
+            <div class="product-info">
+                <div class="product-name">
+                    ${premium.name}
+                </div>
+
+                <div class="product-description">
+                    Telegram Premium
+                </div>
+            </div>
+
+            <div class="product-arrow">
+                ›
+            </div>
+        `;
+
+        card.addEventListener("click", () => {
+            haptic("light");
+            openProductModal(premium);
+        });
+
+        productsContainer.appendChild(card);
+    }
+
+    // STARS
+    const stars = document.createElement("div");
+
+    stars.className = "product-card";
+
+    stars.innerHTML = `
+        <div class="product-icon">
+            ⭐
+        </div>
+
+        <div class="product-info">
+            <div class="product-name">
+                Telegram Stars
+            </div>
+
+            <div class="product-description">
+                Telegram Stars haqida
+            </div>
+        </div>
+
+        <div class="product-arrow">
+            ›
+        </div>
+    `;
+
+    stars.addEventListener("click", () => {
+        haptic("light");
+
+        showPopup(
+            "Telegram Stars'ni Telegramning o‘zidan sotib olish mumkin. " +
+            "DonatUZ Stars yaratib yoki o‘zi chiqarib bera olmaydi."
+        );
+    });
+
+    productsContainer.appendChild(stars);
+}
+
+// ===============================
+// OPEN GAME MODAL
+// ===============================
+
+function openGameModal(game) {
+
+    selectedGame = game;
+    selectedProduct = null;
+    selectedPrice = null;
+
+    if (!modal) {
+        return;
+    }
+
+    if (modalTitle) {
+        modalTitle.textContent =
+            `${game.name} — Donat`;
+    }
+
+    if (playerId) {
+        playerId.value = "";
+        playerId.placeholder =
+            "Player ID / UID kiriting";
+    }
+
+    // UID maydonini ko‘rsatish
+    if (playerId) {
+        playerId.style.display = "block";
+    }
+
+    // Narxlar bo‘lsa eski tanlovlarni tozalash
+    clearPriceButtons();
+
+    modal.classList.add("active");
+
+    // Agar modal style display bilan ishlasa
+    modal.style.display = "flex";
+
+    setTimeout(() => {
+        playerId?.focus();
+    }, 100);
+}
+
+// ===============================
+// OPEN PRODUCT MODAL
+// ===============================
+
+function openProductModal(product) {
+
+    selectedProduct = product;
+    selectedGame = null;
+    selectedPrice = null;
+
+    if (!modal) {
+        return;
+    }
+
+    if (modalTitle) {
+        modalTitle.textContent =
+            product.name;
+    }
+
+    if (playerId) {
+        playerId.style.display = "none";
+    }
+
+    clearPriceButtons();
+
+    // Premium narxlarini chiqarish
+    if (
+        product.id === "premium" &&
+        product.prices
+    ) {
+
+        const priceContainer =
+            document.createElement("div");
+
+        priceContainer.id =
+            "dynamicPrices";
+
+        priceContainer.className =
+            "price-list";
+
+        product.prices.forEach((price, index) => {
+
+            const button =
+                document.createElement("button");
+
+            button.className =
+                "price-button";
+
+            button.innerHTML = `
+                <span>
+                    ${price.title}
+                </span>
+
+                <span>
+                    ⭐ ${price.stars}
+                </span>
+            `;
+
+            button.addEventListener("click", () => {
+
+                document
+                    .querySelectorAll(".price-button")
+                    .forEach(btn =>
+                        btn.classList.remove("selected")
+                    );
+
+                button.classList.add("selected");
+
+                selectedPrice = price;
+
+                haptic("light");
+            });
+
+            priceContainer.appendChild(button);
+        });
+
+        const modalBody =
+            modal.querySelector(".modal-body") ||
+            modal.querySelector(".modal-content") ||
+            modal;
+
+        modalBody.appendChild(priceContainer);
+    }
+
+    modal.classList.add("active");
+    modal.style.display = "flex";
+}
+
+// ===============================
+// CLEAR PRICE BUTTONS
+// ===============================
+
+function clearPriceButtons() {
+
+    const old =
+        document.getElementById("dynamicPrices");
+
+    if (old) {
+        old.remove();
+    }
+
+    selectedPrice = null;
+}
+
+// ===============================
+// CLOSE MODAL
+// ===============================
+
+function closeModal() {
+
+    if (!modal) {
+        return;
+    }
+
+    modal.classList.remove("active");
+    modal.style.display = "none";
+
+    selectedGame = null;
+    selectedProduct = null;
+    selectedPrice = null;
+
+    clearPriceButtons();
+
+    if (playerId) {
+        playerId.value = "";
+    }
+
+    haptic("light");
+}
+
+if (closeButton) {
+    closeButton.addEventListener(
+        "click",
+        closeModal
+    );
+}
+
+// Modal tashqarisiga bosilganda yopish
+if (modal) {
+
+    modal.addEventListener("click", e => {
+
+        if (e.target === modal) {
+            closeModal();
+        }
+
+    });
+}
+
+// ===============================
+// PAYMENT
+// ===============================
+
+async function createPayment() {
+
+    if (!USER_ID) {
+
+        showAlert(
+            "Telegram foydalanuvchisi aniqlanmadi. " +
+            "Mini App'ni Telegram ichidan oching."
+        );
+
+        return;
+    }
+
+    let productName = "";
+    let stars = 0;
+    let uid = "";
+
+    // ===========================
+    // GAME
+    // ===========================
+
+    if (selectedGame) {
+
+        uid =
+            playerId?.value?.trim() || "";
+
+        if (!uid) {
+
+            showAlert(
+                "Avval Player ID / UID kiriting."
+            );
+
+            playerId?.focus();
+
+            return;
+        }
+
+        productName =
+            selectedGame.name;
+
+        /*
+         * Hozircha test Stars miqdori.
+         *
+         * MUHIM:
+         * Bu joy haqiqiy game package
+         * bilan keyin almashtiriladi.
+         */
+        stars = 100;
+    }
+
+    // ===========================
+    // PREMIUM
+    // ===========================
+
+    else if (selectedProduct) {
+
+        if (
+            selectedProduct.id === "premium"
+        ) {
+
+            if (!selectedPrice) {
+
+                showAlert(
+                    "Premium muddatini tanlang."
+                );
+
+                return;
+            }
+
+            productName =
+                `${selectedProduct.name} — ${selectedPrice.title}`;
+
+            stars =
+                Number(selectedPrice.stars);
+
+        }
+
+        else {
+
+            showAlert(
+                "Telegram Stars'ni Telegramning o‘zidan sotib oling."
+            );
+
+            return;
+        }
+    }
+
+    else {
+
+        showAlert(
+            "Mahsulot yoki o‘yin tanlanmagan."
+        );
+
+        return;
+    }
+
+    if (!stars || stars <= 0) {
+
+        showAlert(
+            "To‘lov summasi noto‘g‘ri."
+        );
+
+        return;
+    }
+
+    // Tugmani vaqtincha bloklash
+    if (orderButton) {
+        orderButton.disabled = true;
+        orderButton.dataset.oldText =
+            orderButton.textContent;
+
+        orderButton.textContent =
+            "Invoice yuborilmoqda...";
+    }
+
+    try {
+
+        const response =
+            await fetch("/api/pay", {
+
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body: JSON.stringify({
+
+                    user_id: USER_ID,
+
+                    username: USERNAME,
+
+                    product: productName,
+
+                    player_id: uid,
+
+                    stars: stars
+
+                })
 
             });
 
+        const data =
+            await response.json();
 
-        // topilmasa birinchi natija
+        if (!response.ok) {
 
-        if (!result) {
-
-            result =
-                data.results[0];
-
+            throw new Error(
+                data.detail ||
+                "Server xatosi"
+            );
         }
 
+        haptic("medium");
 
-        let icon =
-            result.artworkUrl512 ||
-            result.artworkUrl100 ||
-            result.artworkUrl60;
+        /*
+         * Backend Telegramga invoice yuboradi.
+         *
+         * Telegram invoice chat oynasida
+         * ko‘rinadi va foydalanuvchi
+         * Stars bilan to‘laydi.
+         */
 
+        showPopup(
+            "Invoice Telegramga yuborildi. " +
+            "Telegramdagi to‘lov oynasini ochib, " +
+            "to‘lovni tasdiqlang."
+        );
 
-        if (!icon) {
-            return null;
+        closeModal();
+
+    } catch (error) {
+
+        console.error(
+            "PAYMENT ERROR:",
+            error
+        );
+
+        showAlert(
+            "To‘lovni boshlashda xatolik:\n" +
+            error.message
+        );
+
+    } finally {
+
+        if (orderButton) {
+
+            orderButton.disabled =
+                false;
+
+            orderButton.textContent =
+                orderButton.dataset.oldText ||
+                "Buyurtma berish";
         }
+    }
+}
 
+// ===============================
+// ORDER BUTTON
+// ===============================
 
-        // katta rasmga o'tkazish
+if (orderButton) {
 
-        icon =
-            icon
-                .replace(
-                    "100x100",
-                    "512x512"
-                )
-                .replace(
-                    "100x100bb",
-                    "512x512bb"
-                )
-                .replace(
-                    "60x60",
-                    "512x512"
+    orderButton.addEventListener(
+        "click",
+        createPayment
+    );
+}
+
+// ===============================
+// SEARCH
+// ===============================
+
+if (searchInput) {
+
+    searchInput.addEventListener(
+        "input",
+        () => {
+
+            const query =
+                searchInput.value
+                    .trim()
+                    .toLowerCase();
+
+            if (!query) {
+
+                renderGames(GAMES);
+
+                return;
+            }
+
+            const filtered =
+                GAMES.filter(game =>
+                    game.name
+                        .toLowerCase()
+                        .includes(query)
                 );
 
+            renderGames(filtered);
 
-        iconCache[game.id] =
-            icon;
+        }
+    );
+}
 
-        return icon;
+// ===============================
+// NAVIGATION
+// ===============================
+
+document.addEventListener(
+    "click",
+    event => {
+
+        const button =
+            event.target.closest(
+                "[data-page]"
+            );
+
+        if (!button) {
+            return;
+        }
+
+        const page =
+            button.dataset.page;
+
+        document
+            .querySelectorAll(
+                "[data-page]"
+            )
+            .forEach(el =>
+                el.classList.remove(
+                    "active"
+                )
+            );
+
+        button.classList.add("active");
+
+        document
+            .querySelectorAll(
+                ".page"
+            )
+            .forEach(el => {
+
+                el.classList.remove(
+                    "active"
+                );
+
+                if (
+                    el.id === page ||
+                    el.dataset.page === page
+                ) {
+                    el.classList.add(
+                        "active"
+                    );
+                }
+
+            });
+
+        haptic("light");
+    }
+);
+
+// ===============================
+// BACK BUTTON
+// ===============================
+
+if (tg?.BackButton) {
+
+    tg.BackButton.onClick(() => {
+
+        if (
+            modal?.classList.contains(
+                "active"
+            )
+        ) {
+            closeModal();
+        } else {
+            tg.close();
+        }
+
+    });
+}
+
+// ===============================
+// LOAD ORDERS
+// ===============================
+
+async function loadOrders() {
+
+    if (!USER_ID) {
+        return;
+    }
+
+    try {
+
+        const response =
+            await fetch(
+                `/api/orders/${USER_ID}`
+            );
+
+        if (!response.ok) {
+            return;
+        }
+
+        const orders =
+            await response.json();
+
+        const ordersContainer =
+            document.getElementById(
+                "orders"
+            );
+
+        if (!ordersContainer) {
+            return;
+        }
+
+        ordersContainer.innerHTML = "";
+
+        if (
+            !orders ||
+            orders.length === 0
+        ) {
+
+            ordersContainer.innerHTML = `
+                <div class="empty-state">
+                    Hozircha buyurtmalar yo‘q.
+                </div>
+            `;
+
+            return;
+        }
+
+        orders.forEach(order => {
+
+            const item =
+                document.createElement(
+                    "div"
+                );
+
+            item.className =
+                "order-item";
+
+            let statusText =
+                "Kutilmoqda";
+
+            if (
+                order.status === "paid"
+            ) {
+                statusText =
+                    "To‘langan";
+            }
+
+            if (
+                order.status === "failed"
+            ) {
+                statusText =
+                    "Bekor qilingan";
+            }
+
+            item.innerHTML = `
+                <div>
+                    <strong>
+                        ${escapeHtml(
+                            order.product || ""
+                        )}
+                    </strong>
+
+                    <div>
+                        ${escapeHtml(
+                            order.created_at || ""
+                        )}
+                    </div>
+                </div>
+
+                <div>
+                    ⭐ ${order.amount || 0}
+                    <br>
+                    <span>
+                        ${statusText}
+                    </span>
+                </div>
+            `;
+
+            ordersContainer.appendChild(
+                item
+            );
+        });
 
     } catch (error) {
 
         console.log(
-            "ICON ERROR:",
-            game.name,
+            "Orders error:",
             error
         );
 
-        return null;
     }
-
 }
 
+// ===============================
+// HTML ESCAPE
+// ===============================
 
-// ======================================================
-// LOAD ONE GAME ICON
-// ======================================================
+function escapeHtml(text) {
 
-async function loadGameIcon(game) {
-
-    const image =
-        document.getElementById(
-            "game-icon-" + game.id
+    return String(text)
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
         );
-
-    if (!image) {
-        return;
-    }
-
-
-    // Avval chiroyli placeholder
-
-    image.src =
-        makePlaceholder(game);
-
-
-    // Internetdan haqiqiy icon
-
-    const icon =
-        await getIcon(game);
-
-
-    if (icon) {
-
-        image.src =
-            icon;
-
-    }
-
 }
 
-
-// ======================================================
-// LOAD GAMES
-// ======================================================
-
-async function loadGames() {
-
-    try {
-
-        const response =
-            await fetch("/api/games");
-
-        if (!response.ok) {
-            throw new Error(
-                "Games API error"
-            );
-        }
-
-        games =
-            await response.json();
-
-
-        renderGames(games);
-
-    } catch (error) {
-
-        console.error(error);
-
-        gamesGrid.innerHTML = `
-            <div
-                style="
-                    grid-column:1/-1;
-                    text-align:center;
-                    padding:30px;
-                    color:#8c96aa;
-                "
-            >
-                O'yinlarni yuklashda xatolik.
-            </div>
-        `;
-
-    }
-
-}
-
-
-// ======================================================
-// RENDER GAMES
-// ======================================================
-
-function renderGames(list) {
-
-    gamesGrid.innerHTML = "";
-
-
-    if (!list.length) {
-
-        gamesGrid.innerHTML = `
-            <div
-                style="
-                    grid-column:1/-1;
-                    text-align:center;
-                    padding:30px;
-                    color:#8c96aa;
-                "
-            >
-                O'yin topilmadi.
-            </div>
-        `;
-
-        return;
-    }
-
-
-    list.forEach(game => {
-
-        const card =
-            document.createElement("div");
-
-        card.className =
-            "game-card";
-
-
-        card.innerHTML = `
-
-            <img
-                class="game-icon"
-                id="game-icon-${game.id}"
-                src="${makePlaceholder(game)}"
-                alt="${game.name}"
-            >
-
-            <div>
-
-                <div class="game-name">
-                    ${game.name}
-                </div>
-
-                <div class="game-small">
-                    Donat qilish
-                </div>
-
-            </div>
-
-        `;
-
-
-        gamesGrid.appendChild(card);
-
-
-        card.addEventListener(
-            "click",
-            () => openGame(game)
-        );
-
-
-        // MUHIM:
-        // Internetdan icon olamiz
-
-        loadGameIcon(game);
-
-    });
-
-}
-
-
-// ======================================================
-// LOAD PRODUCTS
-// ======================================================
-
-async function loadProducts() {
-
-    try {
-
-        const response =
-            await fetch("/api/products");
-
-        products =
-            await response.json();
-
-        renderTelegram(products);
-
-    } catch (error) {
-
-        console.error(error);
-
-    }
-
-}
-
-
-// ======================================================
-// TELEGRAM PRODUCTS
-// ======================================================
-
-function renderTelegram(list) {
-
-    telegramGrid.innerHTML = "";
-
-
-    list.forEach(product => {
-
-        const card =
-            document.createElement("div");
-
-        card.className =
-            "telegram-card";
-
-
-        card.innerHTML = `
-
-            <div class="telegram-icon">
-                ${product.icon}
-            </div>
-
-            <div class="telegram-info">
-
-                <h3>
-                    ${product.name}
-                </h3>
-
-                <p>
-                    ${product.description}
-                </p>
-
-            </div>
-
-        `;
-
-
-        card.addEventListener(
-            "click",
-            () =>
-                openTelegramProduct(product)
-        );
-
-
-        telegramGrid.appendChild(card);
-
-    });
-
-}
-
-
-// ======================================================
-// OPEN GAME
-// ======================================================
-
-function openGame(game) {
-
-    selectedGame =
-        game;
-
-    selectedProduct =
-        null;
-
-    selectedPrice =
-        null;
-
-
-    modalTitle.textContent =
-        game.name;
-
-
-    modalDescription.textContent =
-        "Player ID / UID raqamingizni kiriting";
-
-
-    playerId.style.display =
-        "block";
-
-
-    modalIcon.innerHTML = `
-
-        <img
-            src="${makePlaceholder(game)}"
-            style="
-                width:65px;
-                height:65px;
-                border-radius:18px;
-                object-fit:cover;
-            "
-        >
-
-    `;
-
-
-    // haqiqiy iconni modalga ham yuklaymiz
-
-    getIcon(game).then(icon => {
-
-        if (icon) {
-
-            modalIcon.innerHTML = `
-
-                <img
-                    src="${icon}"
-                    style="
-                        width:65px;
-                        height:65px;
-                        border-radius:18px;
-                        object-fit:cover;
-                    "
-                >
-
-            `;
-
-        }
-
-    });
-
-
-    playerId.value =
-        "";
-
-
-    priceList.innerHTML = `
-
-        <div
-            class="price-item selected"
-        >
-
-            <div class="price-left">
-                💎 Donat paketi
-            </div>
-
-            <div class="price-right">
-                Tez orada
-            </div>
-
-        </div>
-
-    `;
-
-
-    orderButton.textContent =
-        "Buyurtma berish";
-
-
-    modal.classList.remove(
-        "hidden"
-    );
-
-}
-
-
-// ======================================================
-// OPEN TELEGRAM PRODUCT
-// ======================================================
-
-function openTelegramProduct(product) {
-
-    selectedGame =
-        null;
-
-    selectedProduct =
-        product;
-
-    selectedPrice =
-        null;
-
-
-    modalTitle.textContent =
-        product.name;
-
-
-    modalDescription.textContent =
-        product.description;
-
-
-    modalIcon.innerHTML =
-        product.icon;
-
-
-    playerId.style.display =
-        "none";
-
-
-    priceList.innerHTML =
-        "";
-
-
-    product.prices.forEach(price => {
-
-        const item =
-            document.createElement("div");
-
-        item.className =
-            "price-item";
-
-
-        const text =
-            product.id === "stars"
-                ? `${price.amount} ⭐ Stars`
-                : `${price.amount} oy`;
-
-
-        item.innerHTML = `
-
-            <div class="price-left">
-                ${text}
-            </div>
-
-            <div class="price-right">
-                ${formatMoney(price.price)}
-                so'm
-            </div>
-
-        `;
-
-
-        item.addEventListener(
-            "click",
-            () => {
-
-                document
-                    .querySelectorAll(
-                        ".price-item"
-                    )
-                    .forEach(el => {
-
-                        el.classList.remove(
-                            "selected"
-                        );
-
-                    });
-
-
-                item.classList.add(
-                    "selected"
-                );
-
-
-                selectedPrice =
-                    price;
-
-            }
-        );
-
-
-        priceList.appendChild(item);
-
-    });
-
-
-    orderButton.textContent =
-        "Davom etish";
-
-
-    modal.classList.remove(
-        "hidden"
-    );
-
-}
-
-
-// ======================================================
-// CLOSE MODAL
-// ======================================================
-
-closeModal.addEventListener(
-    "click",
-    closeModalWindow
-);
-
-
-modal.addEventListener(
-    "click",
-    event => {
-
-        if (
-            event.target === modal
-        ) {
-
-            closeModalWindow();
-
-        }
-
-    }
-);
-
-
-function closeModalWindow() {
-
-    modal.classList.add(
-        "hidden"
-    );
-
-    playerId.style.display =
-        "block";
-
-}
-
-
-// ======================================================
-// ORDER
-// ======================================================
-
-orderButton.addEventListener(
-    "click",
-    async () => {
-
-
-        // GAME
-
-        if (selectedGame) {
-
-            const uid =
-                playerId.value.trim();
-
-
-            if (!uid) {
-
-                tg.showAlert(
-                    "Player ID / UID ni kiriting."
-                );
-
-                return;
-
-            }
-
-
-            tg.showAlert(
-                "Bu bo'lim hozircha demo rejimida."
-            );
-
-
-            return;
-
-        }
-
-
-        // TELEGRAM
-
-        if (selectedProduct) {
-
-            if (!selectedPrice) {
-
-                tg.showAlert(
-                    "Avval paketni tanlang."
-                );
-
-                return;
-
-            }
-
-
-            tg.showAlert(
-                "To'lov tizimi keyingi bosqichda ulanadi."
-            );
-
-        }
-
-    }
-);
-
-
-// ======================================================
-// MONEY
-// ======================================================
-
-function formatMoney(number) {
-
-    return Number(number)
-        .toLocaleString("uz-UZ");
-
-}
-
-
-// ======================================================
-// SEARCH
-// ======================================================
-
-searchInput.addEventListener(
-    "input",
+// ===============================
+// INITIALIZE
+// ===============================
+
+document.addEventListener(
+    "DOMContentLoaded",
     () => {
 
-        const query =
-            searchInput.value
-                .toLowerCase()
-                .trim();
+        renderGames();
+        renderProducts();
+        loadOrders();
 
+        console.log(
+            "DonatUZ Mini App ishga tushdi"
+        );
 
-        const filtered =
-            games.filter(game => {
-
-                return game.name
-                    .toLowerCase()
-                    .includes(query);
-
-            });
-
-
-        renderGames(filtered);
+        console.log(
+            "Telegram User ID:",
+            USER_ID
+        );
 
     }
 );
 
+// Agar DOMContentLoaded allaqachon o‘tgan bo‘lsa
+if (
+    document.readyState ===
+    "interactive" ||
+    document.readyState === "complete"
+) {
 
-// ======================================================
-// CATEGORY
-// ======================================================
+    renderGames();
+    renderProducts();
 
-document
-    .querySelectorAll(".category")
-    .forEach(button => {
-
-        button.addEventListener(
-            "click",
-            () => {
-
-                document
-                    .querySelectorAll(
-                        ".category"
-                    )
-                    .forEach(btn => {
-
-                        btn.classList.remove(
-                            "active"
-                        );
-
-                    });
-
-
-                button.classList.add(
-                    "active"
-                );
-
-
-                const category =
-                    button.dataset.category;
-
-
-                if (
-                    category === "games"
-                ) {
-
-                    gamesSection.style.display =
-                        "block";
-
-                    telegramSection.style.display =
-                        "none";
-
-                    searchInput.style.display =
-                        "flex";
-
-                } else {
-
-                    gamesSection.style.display =
-                        "none";
-
-                    telegramSection.style.display =
-                        "block";
-
-                    searchInput.style.display =
-                        "none";
-
-                }
-
-            }
-        );
-
-    });
-
-
-// ======================================================
-// START
-// ======================================================
-
-loadGames();
-loadProducts();
-
-
-// ======================================================
-// DEBUG
-// ======================================================
-
-console.log(
-    "DonatUZ Mini App started"
-);
-
-console.log(
-    "Telegram User:",
-    telegramUser
-);
+}
