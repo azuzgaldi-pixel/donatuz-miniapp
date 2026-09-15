@@ -1,20 +1,23 @@
 import os
 import hmac
 import hashlib
-import sqlite3
 import json
-import asyncio
-from urllib.parse import parse_qsl
+import sqlite3
+import threading
+import urllib.parse
+from datetime import datetime
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+import uvicorn
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
-from telegram.ext import Application, CommandHandler, ContextTypes
-
-import uvicorn
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    ContextTypes,
+)
 
 
 # =========================================================
@@ -22,21 +25,20 @@ import uvicorn
 # =========================================================
 
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
-WEBAPP_URL = os.getenv("WEBAPP_URL", "")
+WEBAPP_URL = os.getenv("WEBAPP_URL", "").rstrip("/")
 ADMIN_ID = os.getenv("ADMIN_ID", "")
 
-PORT = int(os.getenv("PORT", "8080"))
-
 if not BOT_TOKEN:
-    print("WARNING: BOT_TOKEN topilmadi!")
+    raise ValueError("BOT_TOKEN topilmadi!")
+
+PORT = int(os.getenv("PORT", "8000"))
+
+DB_NAME = "donatuz.db"
 
 
 # =========================================================
 # DATABASE
 # =========================================================
-
-DB_NAME = "donatuz.db"
-
 
 def db():
     conn = sqlite3.connect(DB_NAME)
@@ -52,22 +54,23 @@ def init_db():
             id INTEGER PRIMARY KEY,
             username TEXT,
             first_name TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            last_name TEXT,
+            created_at TEXT
         )
     """)
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS orders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            product_type TEXT,
-            product_name TEXT,
-            game TEXT,
-            player_id TEXT,
-            package TEXT,
-            price INTEGER,
-            status TEXT DEFAULT 'pending',
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            user_id INTEGER NOT NULL,
+            product_type TEXT NOT NULL,
+            product_name TEXT NOT NULL,
+            game_id TEXT,
+            game_name TEXT,
+            package_name TEXT,
+            amount INTEGER NOT NULL,
+            status TEXT NOT NULL,
+            created_at TEXT
         )
     """)
 
@@ -75,19 +78,7 @@ def init_db():
     conn.close()
 
 
-def save_user(user_id, username="", first_name=""):
-    conn = db()
-
-    conn.execute("""
-        INSERT INTO users (id, username, first_name)
-        VALUES (?, ?, ?)
-        ON CONFLICT(id) DO UPDATE SET
-            username=excluded.username,
-            first_name=excluded.first_name
-    """, (user_id, username, first_name))
-
-    conn.commit()
-    conn.close()
+init_db()
 
 
 # =========================================================
@@ -98,259 +89,248 @@ GAMES = [
     {
         "id": "pubg",
         "name": "PUBG Mobile",
-        "icon": "🎯",
-        "category": "Battle Royale"
+        "category": "Battle Royale",
+        "icon": "🔫",
+        "description": "PUBG Mobile UC",
+        "packages": [
+            {"name": "60 UC", "price": 14000},
+            {"name": "325 UC", "price": 70000},
+            {"name": "660 UC", "price": 140000},
+            {"name": "1800 UC", "price": 350000},
+        ]
     },
     {
         "id": "freefire",
         "name": "Free Fire",
+        "category": "Battle Royale",
         "icon": "🔥",
-        "category": "Battle Royale"
+        "description": "Free Fire Diamonds",
+        "packages": [
+            {"name": "100 Diamonds", "price": 16000},
+            {"name": "310 Diamonds", "price": 45000},
+            {"name": "520 Diamonds", "price": 70000},
+            {"name": "1060 Diamonds", "price": 140000},
+        ]
     },
     {
         "id": "mlbb",
         "name": "Mobile Legends",
+        "category": "MOBA",
         "icon": "⚔️",
-        "category": "MOBA"
+        "description": "Mobile Legends Diamonds",
+        "packages": [
+            {"name": "86 Diamonds", "price": 18000},
+            {"name": "172 Diamonds", "price": 34000},
+            {"name": "257 Diamonds", "price": 50000},
+            {"name": "706 Diamonds", "price": 130000},
+        ]
     },
     {
-        "id": "brawlstars",
+        "id": "brawl",
         "name": "Brawl Stars",
+        "category": "Action",
         "icon": "⭐",
-        "category": "Action"
+        "description": "Brawl Stars Gems",
+        "packages": [
+            {"name": "30 Gems", "price": 18000},
+            {"name": "80 Gems", "price": 40000},
+            {"name": "170 Gems", "price": 80000},
+            {"name": "360 Gems", "price": 160000},
+        ]
     },
     {
         "id": "roblox",
         "name": "Roblox",
+        "category": "Games",
         "icon": "🟥",
-        "category": "Gaming"
+        "description": "Robux",
+        "packages": [
+            {"name": "400 Robux", "price": 70000},
+            {"name": "800 Robux", "price": 135000},
+            {"name": "1700 Robux", "price": 270000},
+        ]
     },
     {
         "id": "coc",
         "name": "Clash of Clans",
+        "category": "Strategy",
         "icon": "🏰",
-        "category": "Strategy"
+        "description": "Clash of Clans Gems",
+        "packages": [
+            {"name": "500 Gems", "price": 70000},
+            {"name": "1200 Gems", "price": 140000},
+            {"name": "2500 Gems", "price": 270000},
+        ]
     },
     {
-        "id": "clashroyale",
+        "id": "cr",
         "name": "Clash Royale",
+        "category": "Strategy",
         "icon": "👑",
-        "category": "Strategy"
+        "description": "Clash Royale Gems",
+        "packages": [
+            {"name": "80 Gems", "price": 18000},
+            {"name": "500 Gems", "price": 80000},
+            {"name": "1200 Gems", "price": 160000},
+        ]
     },
     {
-        "id": "standoff2",
+        "id": "standoff",
         "name": "Standoff 2",
-        "icon": "🔫",
-        "category": "Shooter"
+        "category": "Shooter",
+        "icon": "🎯",
+        "description": "Gold",
+        "packages": [
+            {"name": "100 Gold", "price": 18000},
+            {"name": "500 Gold", "price": 75000},
+            {"name": "1000 Gold", "price": 140000},
+        ]
     },
     {
         "id": "codm",
         "name": "Call of Duty Mobile",
+        "category": "Shooter",
         "icon": "💥",
-        "category": "Shooter"
+        "description": "COD Points",
+        "packages": [
+            {"name": "80 CP", "price": 18000},
+            {"name": "420 CP", "price": 80000},
+            {"name": "880 CP", "price": 160000},
+        ]
     },
     {
         "id": "fcmobile",
         "name": "FC Mobile",
+        "category": "Sports",
         "icon": "⚽",
-        "category": "Sports"
+        "description": "FC Points",
+        "packages": [
+            {"name": "105 FC Points", "price": 25000},
+            {"name": "550 FC Points", "price": 100000},
+            {"name": "1200 FC Points", "price": 200000},
+        ]
     },
     {
         "id": "efootball",
         "name": "eFootball",
+        "category": "Sports",
         "icon": "⚽",
-        "category": "Sports"
+        "description": "eFootball Coins",
+        "packages": [
+            {"name": "130 Coins", "price": 25000},
+            {"name": "550 Coins", "price": 90000},
+            {"name": "1200 Coins", "price": 180000},
+        ]
     },
     {
         "id": "genshin",
         "name": "Genshin Impact",
-        "icon": "✨",
-        "category": "RPG"
+        "category": "RPG",
+        "icon": "🌟",
+        "description": "Genesis Crystals",
+        "packages": [
+            {"name": "60 Crystals", "price": 22000},
+            {"name": "300 Crystals", "price": 90000},
+            {"name": "980 Crystals", "price": 270000},
+        ]
     },
     {
         "id": "hsr",
         "name": "Honkai: Star Rail",
-        "icon": "🌌",
-        "category": "RPG"
+        "category": "RPG",
+        "icon": "🚂",
+        "description": "Oneiric Shards",
+        "packages": [
+            {"name": "60 Shards", "price": 22000},
+            {"name": "300 Shards", "price": 90000},
+            {"name": "980 Shards", "price": 270000},
+        ]
     },
     {
         "id": "valorant",
         "name": "Valorant",
-        "icon": "🎮",
-        "category": "Shooter"
+        "category": "Shooter",
+        "icon": "🔻",
+        "description": "Valorant Points",
+        "packages": [
+            {"name": "475 VP", "price": 80000},
+            {"name": "1000 VP", "price": 150000},
+            {"name": "2050 VP", "price": 300000},
+        ]
     },
     {
         "id": "lol",
         "name": "League of Legends",
+        "category": "MOBA",
         "icon": "🛡️",
-        "category": "MOBA"
+        "description": "Riot Points",
+        "packages": [
+            {"name": "575 RP", "price": 80000},
+            {"name": "1380 RP", "price": 180000},
+            {"name": "2800 RP", "price": 350000},
+        ]
     },
     {
         "id": "fortnite",
         "name": "Fortnite",
-        "icon": "🟪",
-        "category": "Battle Royale"
+        "category": "Battle Royale",
+        "icon": "🪂",
+        "description": "V-Bucks",
+        "packages": [
+            {"name": "800 V-Bucks", "price": 120000},
+            {"name": "2800 V-Bucks", "price": 400000},
+            {"name": "5000 V-Bucks", "price": 650000},
+        ]
     },
     {
         "id": "minecraft",
         "name": "Minecraft",
+        "category": "Games",
         "icon": "⛏️",
-        "category": "Adventure"
+        "description": "Minecraft services",
+        "packages": [
+            {"name": "Minecraft Gift", "price": 300000},
+            {"name": "Minecoins", "price": 80000},
+        ]
     },
     {
         "id": "arena",
         "name": "Arena Breakout",
-        "icon": "🎖️",
-        "category": "Shooter"
+        "category": "Shooter",
+        "icon": "🪖",
+        "description": "In-game currency",
+        "packages": [
+            {"name": "100 Coins", "price": 20000},
+            {"name": "500 Coins", "price": 85000},
+            {"name": "1000 Coins", "price": 160000},
+        ]
     },
     {
-        "id": "deltaforce",
+        "id": "delta",
         "name": "Delta Force",
-        "icon": "🪖",
-        "category": "Shooter"
+        "category": "Shooter",
+        "icon": "🎖️",
+        "description": "In-game currency",
+        "packages": [
+            {"name": "Small Pack", "price": 25000},
+            {"name": "Medium Pack", "price": 90000},
+            {"name": "Large Pack", "price": 180000},
+        ]
     },
     {
         "id": "steam",
         "name": "Steam",
-        "icon": "🎲",
-        "category": "Gaming"
-    }
+        "category": "Games",
+        "icon": "🎮",
+        "description": "Steam Wallet",
+        "packages": [
+            {"name": "$5", "price": 70000},
+            {"name": "$10", "price": 135000},
+            {"name": "$20", "price": 270000},
+        ]
+    },
 ]
 
-
-# =========================================================
-# DEMO PACKAGES
-# =========================================================
-
-PACKAGES = {
-    "pubg": [
-        {"name": "60 UC", "price": 12000},
-        {"name": "325 UC", "price": 58000},
-        {"name": "660 UC", "price": 110000},
-        {"name": "1800 UC", "price": 285000},
-    ],
-
-    "freefire": [
-        {"name": "100 Diamonds", "price": 16000},
-        {"name": "310 Diamonds", "price": 47000},
-        {"name": "520 Diamonds", "price": 74000},
-        {"name": "1060 Diamonds", "price": 145000},
-    ],
-
-    "mlbb": [
-        {"name": "86 Diamonds", "price": 18000},
-        {"name": "172 Diamonds", "price": 35000},
-        {"name": "257 Diamonds", "price": 51000},
-        {"name": "706 Diamonds", "price": 130000},
-    ],
-
-    "brawlstars": [
-        {"name": "30 Gems", "price": 18000},
-        {"name": "80 Gems", "price": 43000},
-        {"name": "170 Gems", "price": 85000},
-    ],
-
-    "roblox": [
-        {"name": "400 Robux", "price": 65000},
-        {"name": "800 Robux", "price": 120000},
-        {"name": "1700 Robux", "price": 245000},
-    ],
-
-    "coc": [
-        {"name": "Gold Pass", "price": 90000},
-        {"name": "500 Gems", "price": 75000},
-        {"name": "1200 Gems", "price": 165000},
-    ],
-
-    "clashroyale": [
-        {"name": "500 Gems", "price": 75000},
-        {"name": "1200 Gems", "price": 165000},
-        {"name": "2500 Gems", "price": 320000},
-    ],
-
-    "standoff2": [
-        {"name": "100 Gold", "price": 20000},
-        {"name": "500 Gold", "price": 90000},
-        {"name": "1000 Gold", "price": 170000},
-    ],
-
-    "codm": [
-        {"name": "80 CP", "price": 18000},
-        {"name": "420 CP", "price": 85000},
-        {"name": "880 CP", "price": 165000},
-    ],
-
-    "fcmobile": [
-        {"name": "100 FC Points", "price": 25000},
-        {"name": "520 FC Points", "price": 110000},
-        {"name": "1050 FC Points", "price": 205000},
-    ],
-
-    "efootball": [
-        {"name": "130 Coins", "price": 28000},
-        {"name": "550 Coins", "price": 105000},
-        {"name": "1280 Coins", "price": 230000},
-    ],
-
-    "genshin": [
-        {"name": "60 Genesis Crystals", "price": 18000},
-        {"name": "300 Genesis Crystals", "price": 75000},
-        {"name": "980 Genesis Crystals", "price": 220000},
-    ],
-
-    "hsr": [
-        {"name": "60 Oneiric Shards", "price": 18000},
-        {"name": "300 Oneiric Shards", "price": 75000},
-        {"name": "980 Oneiric Shards", "price": 220000},
-    ],
-
-    "valorant": [
-        {"name": "475 VP", "price": 75000},
-        {"name": "1000 VP", "price": 145000},
-        {"name": "2050 VP", "price": 285000},
-    ],
-
-    "lol": [
-        {"name": "575 RP", "price": 90000},
-        {"name": "1380 RP", "price": 205000},
-        {"name": "2800 RP", "price": 400000},
-    ],
-
-    "fortnite": [
-        {"name": "800 V-Bucks", "price": 120000},
-        {"name": "2800 V-Bucks", "price": 390000},
-        {"name": "5000 V-Bucks", "price": 680000},
-    ],
-
-    "minecraft": [
-        {"name": "Minecoins 320", "price": 65000},
-        {"name": "Minecoins 1020", "price": 175000},
-        {"name": "Minecoins 1720", "price": 285000},
-    ],
-
-    "arena": [
-        {"name": "100 Bonds", "price": 25000},
-        {"name": "500 Bonds", "price": 110000},
-        {"name": "1000 Bonds", "price": 210000},
-    ],
-
-    "deltaforce": [
-        {"name": "300 Coins", "price": 45000},
-        {"name": "680 Coins", "price": 95000},
-        {"name": "1380 Coins", "price": 185000},
-    ],
-
-    "steam": [
-        {"name": "Steam 5 USD", "price": 75000},
-        {"name": "Steam 10 USD", "price": 145000},
-        {"name": "Steam 20 USD", "price": 285000},
-    ],
-}
-
-
-# =========================================================
-# TELEGRAM PRODUCTS
-# =========================================================
 
 PRODUCTS = [
     {
@@ -358,12 +338,23 @@ PRODUCTS = [
         "name": "Telegram Stars",
         "icon": "⭐",
         "description": "Telegram Stars",
+        "packages": [
+            {"name": "100 Stars", "price": 25000},
+            {"name": "250 Stars", "price": 55000},
+            {"name": "500 Stars", "price": 105000},
+            {"name": "1000 Stars", "price": 200000},
+        ]
     },
     {
         "id": "premium",
         "name": "Telegram Premium",
         "icon": "💎",
         "description": "Telegram Premium",
+        "packages": [
+            {"name": "3 oy", "price": 0},
+            {"name": "6 oy", "price": 0},
+            {"name": "12 oy", "price": 0},
+        ]
     }
 ]
 
@@ -372,7 +363,7 @@ PRODUCTS = [
 # FASTAPI
 # =========================================================
 
-app = FastAPI(title="DonatUZ API")
+app = FastAPI(title="DonatUZ Mini App")
 
 app.add_middleware(
     CORSMiddleware,
@@ -384,7 +375,7 @@ app.add_middleware(
 
 
 # =========================================================
-# MINI APP AUTH
+# TELEGRAM INIT DATA VALIDATION
 # =========================================================
 
 def validate_init_data(init_data: str):
@@ -392,17 +383,23 @@ def validate_init_data(init_data: str):
         return None
 
     try:
-        parsed = dict(parse_qsl(init_data, keep_blank_values=True))
+        parsed = urllib.parse.parse_qs(init_data)
 
-        received_hash = parsed.pop("hash", None)
+        received_hash = parsed.get("hash", [None])[0]
 
         if not received_hash:
             return None
 
-        data_check_string = "\n".join(
-            f"{key}={parsed[key]}"
-            for key in sorted(parsed.keys())
-        )
+        data_check_pairs = []
+
+        for key in sorted(parsed.keys()):
+            if key == "hash":
+                continue
+
+            value = parsed[key][0]
+            data_check_pairs.append(f"{key}={value}")
+
+        data_check_string = "\n".join(data_check_pairs)
 
         secret_key = hmac.new(
             b"WebAppData",
@@ -419,31 +416,70 @@ def validate_init_data(init_data: str):
         if not hmac.compare_digest(calculated_hash, received_hash):
             return None
 
-        user_data = json.loads(parsed.get("user", "{}"))
+        user_raw = parsed.get("user", [None])[0]
 
-        return user_data
+        if not user_raw:
+            return None
+
+        return json.loads(user_raw)
 
     except Exception:
         return None
 
 
+def get_user_from_request(request: Request):
+    init_data = request.headers.get("X-Telegram-Init-Data", "")
+
+    user = validate_init_data(init_data)
+
+    # Local browser test uchun
+    if not user:
+        user = {
+            "id": 0,
+            "first_name": "Demo",
+            "last_name": "",
+            "username": "demo_user"
+        }
+
+    return user
+
+
 # =========================================================
-# API MODELS
+# USER
 # =========================================================
 
-class OrderRequest(BaseModel):
-    initData: str = ""
-    game: str
-    package: str
-    player_id: str
+def save_user(user):
+    if not user:
+        return
+
+    conn = db()
+
+    conn.execute("""
+        INSERT INTO users
+        (id, username, first_name, last_name, created_at)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+        username=excluded.username,
+        first_name=excluded.first_name,
+        last_name=excluded.last_name
+    """, (
+        user.get("id", 0),
+        user.get("username", ""),
+        user.get("first_name", ""),
+        user.get("last_name", ""),
+        datetime.utcnow().isoformat()
+    ))
+
+    conn.commit()
+    conn.close()
 
 
 # =========================================================
-# API ROUTES
+# API
 # =========================================================
 
 @app.get("/health")
-def health():
+async def health():
     return {
         "status": "ok",
         "service": "DonatUZ"
@@ -451,91 +487,87 @@ def health():
 
 
 @app.get("/api/games")
-def get_games():
-    result = []
-
-    for game in GAMES:
-        item = dict(game)
-        item["packages"] = PACKAGES.get(game["id"], [])
-        result.append(item)
-
-    return result
+async def games():
+    return GAMES
 
 
 @app.get("/api/products")
-def get_products():
+async def products():
     return PRODUCTS
 
 
 @app.post("/api/order")
-def create_order(order: OrderRequest):
+async def create_order(request: Request):
+    user = get_user_from_request(request)
+    save_user(user)
 
-    user = validate_init_data(order.initData)
+    data = await request.json()
 
-    if not user:
-        raise HTTPException(
-            status_code=401,
-            detail="Telegram foydalanuvchisi aniqlanmadi"
-        )
+    product_type = data.get("product_type", "")
+    product_id = data.get("product_id", "")
+    package_name = data.get("package_name", "")
+    amount = int(data.get("amount", 0))
 
-    user_id = user.get("id")
-
-    if not order.player_id.strip():
+    if amount <= 0:
         raise HTTPException(
             status_code=400,
-            detail="Player ID kiriting"
+            detail="Noto'g'ri summa"
         )
 
-    game_data = next(
-        (g for g in GAMES if g["id"] == order.game),
-        None
-    )
-
-    if not game_data:
-        raise HTTPException(
-            status_code=404,
-            detail="O'yin topilmadi"
+    if product_type == "game":
+        game = next(
+            (g for g in GAMES if g["id"] == product_id),
+            None
         )
 
-    package_data = next(
-        (
-            p for p in PACKAGES.get(order.game, [])
-            if p["name"] == order.package
-        ),
-        None
-    )
+        if not game:
+            raise HTTPException(
+                status_code=404,
+                detail="O'yin topilmadi"
+            )
 
-    if not package_data:
-        raise HTTPException(
-            status_code=404,
-            detail="Paket topilmadi"
+        game_name = game["name"]
+
+    else:
+        product = next(
+            (p for p in PRODUCTS if p["id"] == product_id),
+            None
         )
 
-    price = package_data["price"] + 200
+        if not product:
+            raise HTTPException(
+                status_code=404,
+                detail="Mahsulot topilmadi"
+            )
+
+        game_name = ""
 
     conn = db()
 
     cursor = conn.execute("""
-        INSERT INTO orders (
+        INSERT INTO orders
+        (
             user_id,
             product_type,
             product_name,
-            game,
-            player_id,
-            package,
-            price,
-            status
+            game_id,
+            game_name,
+            package_name,
+            amount,
+            status,
+            created_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
-        user_id,
-        "game",
-        game_data["name"],
-        game_data["name"],
-        order.player_id,
-        order.package,
-        price,
-        "pending"
+        user.get("id", 0),
+        product_type,
+        product_id,
+        product_id if product_type == "game" else "",
+        game_name,
+        package_name,
+        amount,
+        "pending",
+        datetime.utcnow().isoformat()
     ))
 
     order_id = cursor.lastrowid
@@ -546,15 +578,13 @@ def create_order(order: OrderRequest):
     return {
         "success": True,
         "order_id": order_id,
-        "price": price,
         "status": "pending",
         "message": "Buyurtma qabul qilindi"
     }
 
 
 @app.get("/api/orders/{user_id}")
-def get_orders(user_id: int):
-
+async def get_orders(user_id: int):
     conn = db()
 
     rows = conn.execute("""
@@ -562,6 +592,7 @@ def get_orders(user_id: int):
         FROM orders
         WHERE user_id = ?
         ORDER BY id DESC
+        LIMIT 100
     """, (user_id,)).fetchall()
 
     conn.close()
@@ -570,30 +601,18 @@ def get_orders(user_id: int):
 
 
 # =========================================================
-# STATIC WEB
-# =========================================================
-
-app.mount(
-    "/",
-    StaticFiles(directory="web", html=True),
-    name="web"
-)
-
-
-# =========================================================
 # TELEGRAM BOT
 # =========================================================
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     user = update.effective_user
 
-    if user:
-        save_user(
-            user.id,
-            user.username or "",
-            user.first_name or ""
-        )
+    save_user({
+        "id": user.id,
+        "username": user.username or "",
+        "first_name": user.first_name or "",
+        "last_name": user.last_name or ""
+    })
 
     keyboard = [
         [
@@ -604,105 +623,110 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]
     ]
 
-    await update.message.reply_text(
+    text = (
+        f"Assalomu alaykum, {user.first_name}! 👋\n\n"
         "🎮 DonatUZ'ga xush kelibsiz!\n\n"
-        "O'yinlarga donat, Telegram Stars va Premium xizmatlari.\n\n"
-        "Pastdagi tugma orqali Mini App'ni oching.",
+        "Bu yerda o‘yinlar uchun donat xizmatlari, "
+        "Telegram Stars va Premium xizmatlarini ko‘rishingiz mumkin.\n\n"
+        "👇 Mini App'ni ochish uchun tugmani bosing:"
+    )
+
+    await update.message.reply_text(
+        text,
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     await update.message.reply_text(
-        "📚 DonatUZ yordam\n\n"
+        "ℹ️ DonatUZ yordam\n\n"
         "/start — Mini App'ni ochish\n"
-        "/help — Yordam\n"
-        "/stats — Statistika\n"
-        "/orders — Buyurtmalar"
-    )
-
-
-async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if not ADMIN_ID:
-        await update.message.reply_text("Admin ID sozlanmagan.")
-        return
-
-    if str(update.effective_user.id) != str(ADMIN_ID):
-        await update.message.reply_text("⛔ Siz admin emassiz.")
-        return
-
-    conn = db()
-
-    users = conn.execute(
-        "SELECT COUNT(*) FROM users"
-    ).fetchone()[0]
-
-    orders = conn.execute(
-        "SELECT COUNT(*) FROM orders"
-    ).fetchone()[0]
-
-    pending = conn.execute(
-        "SELECT COUNT(*) FROM orders WHERE status='pending'"
-    ).fetchone()[0]
-
-    conn.close()
-
-    await update.message.reply_text(
-        "📊 DonatUZ statistikasi\n\n"
-        f"👥 Foydalanuvchilar: {users}\n"
-        f"📦 Buyurtmalar: {orders}\n"
-        f"⏳ Kutilayotgan: {pending}"
+        "/orders — Buyurtmalar\n"
+        "/help — Yordam"
     )
 
 
 async def orders_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    user_id = update.effective_user.id
+    user = update.effective_user
 
     conn = db()
 
     rows = conn.execute("""
-        SELECT id, product_name, package, price, status
+        SELECT *
         FROM orders
-        WHERE user_id=?
+        WHERE user_id = ?
         ORDER BY id DESC
         LIMIT 10
-    """, (user_id,)).fetchall()
+    """, (user.id,)).fetchall()
 
     conn.close()
 
     if not rows:
         await update.message.reply_text(
-            "📦 Sizda hozircha buyurtmalar yo'q."
+            "📦 Sizda hali buyurtmalar yo‘q."
         )
         return
 
     text = "📦 Oxirgi buyurtmalaringiz:\n\n"
 
     for row in rows:
+        status = row["status"]
+
+        if status == "pending":
+            status_text = "⏳ Kutilmoqda"
+        elif status == "paid":
+            status_text = "💳 To‘langan"
+        elif status == "completed":
+            status_text = "✅ Bajarilgan"
+        else:
+            status_text = status
+
         text += (
-            f"#{row['id']} — {row['product_name']}\n"
-            f"🎁 {row['package']}\n"
-            f"💰 {row['price']:,} UZS\n"
-            f"📌 {row['status']}\n\n"
+            f"🧾 #{row['id']}\n"
+            f"🎮 {row['game_name'] or row['product_name']}\n"
+            f"📦 {row['package_name']}\n"
+            f"💰 {row['amount']:,} UZS\n"
+            f"{status_text}\n\n"
         )
 
     await update.message.reply_text(text)
 
 
-# =========================================================
-# BOT RUNNER
-# =========================================================
+async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not ADMIN_ID:
+        await update.message.reply_text("Admin ID sozlanmagan.")
+        return
 
-async def run_bot():
+    if str(update.effective_user.id) != str(ADMIN_ID):
+        await update.message.reply_text("⛔ Ruxsat yo‘q.")
+        return
 
-    application = (
-        Application.builder()
-        .token(BOT_TOKEN)
-        .build()
+    conn = db()
+
+    users_count = conn.execute(
+        "SELECT COUNT(*) FROM users"
+    ).fetchone()[0]
+
+    orders_count = conn.execute(
+        "SELECT COUNT(*) FROM orders"
+    ).fetchone()[0]
+
+    revenue = conn.execute(
+        "SELECT COALESCE(SUM(amount), 0) FROM orders WHERE status != 'cancelled'"
+    ).fetchone()[0]
+
+    conn.close()
+
+    await update.message.reply_text(
+        "📊 DonatUZ statistikasi\n\n"
+        f"👤 Users: {users_count}\n"
+        f"📦 Orders: {orders_count}\n"
+        f"💰 Buyurtmalar summasi: {revenue:,} UZS"
     )
+
+
+def start_bot():
+    application = Application.builder().token(BOT_TOKEN).build()
 
     application.add_handler(
         CommandHandler("start", start)
@@ -713,46 +737,47 @@ async def run_bot():
     )
 
     application.add_handler(
-        CommandHandler("stats", stats_command)
-    )
-
-    application.add_handler(
         CommandHandler("orders", orders_command)
     )
 
-    await application.initialize()
-    await application.start()
-    await application.updater.start_polling()
+    application.add_handler(
+        CommandHandler("stats", stats_command)
+    )
 
-    print("Telegram bot ishga tushdi.")
-
-    while True:
-        await asyncio.sleep(3600)
+    application.run_polling(
+        allowed_updates=Update.ALL_TYPES
+    )
 
 
 # =========================================================
-# SERVER
+# STATIC MINI APP
 # =========================================================
 
-def run_server():
+app.mount(
+    "/",
+    StaticFiles(
+        directory="web",
+        html=True
+    ),
+    name="web"
+)
+
+
+# =========================================================
+# START
+# =========================================================
+
+if __name__ == "__main__":
+
+    bot_thread = threading.Thread(
+        target=start_bot,
+        daemon=True
+    )
+
+    bot_thread.start()
+
     uvicorn.run(
         app,
         host="0.0.0.0",
         port=PORT
     )
-
-
-if __name__ == "__main__":
-
-    init_db()
-
-    import threading
-
-    server_thread = threading.Thread(
-        target=run_server,
-        daemon=True
-    )
-
-    server_thread.start()
-
-    asyncio.run(run_bot())
