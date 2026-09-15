@@ -4,60 +4,88 @@ tg.ready();
 tg.expand();
 
 let games = [];
-let selectedGame = null;
+let currentGame = null;
 let selectedPackage = null;
+let currentCategory = "all";
 
 
-// =====================================================
-// LOAD
-// =====================================================
+// =========================================================
+// TELEGRAM USER
+// =========================================================
 
-async function loadGames() {
+const telegramUser = tg.initDataUnsafe?.user || null;
 
-    try {
-
-        const response = await fetch("/api/games");
-
-        if (!response.ok) {
-            throw new Error("API error");
-        }
-
-        games = await response.json();
-
-        renderGames();
-
-    } catch (error) {
-
-        console.error(error);
-
-        document.getElementById("games").innerHTML = `
-            <div class="loading">
-                ❌ O‘yinlarni yuklab bo‘lmadi
-            </div>
-        `;
-    }
+function getUserId() {
+    return telegramUser?.id || null;
 }
 
 
-// =====================================================
-// GAMES
-// =====================================================
+// =========================================================
+// INITIALIZE
+// =========================================================
 
-function renderGames() {
+document.addEventListener("DOMContentLoaded", async () => {
 
-    const container =
-        document.getElementById("games");
+    try {
+        await loadGames();
+        updateProfile();
+        loadOrders();
+    } catch (error) {
+        console.error(error);
+    }
 
-    container.innerHTML = "";
+});
 
-    games.forEach(game => {
 
-        const element =
-            document.createElement("div");
+// =========================================================
+// LOAD GAMES
+// =========================================================
 
-        element.className = "game";
+async function loadGames() {
 
-        element.innerHTML = `
+    const response = await fetch("/api/games");
+
+    games = await response.json();
+
+    renderGames(games);
+}
+
+
+// =========================================================
+// RENDER GAMES
+// =========================================================
+
+function renderGames(list) {
+
+    const grid = document.getElementById("gamesGrid");
+
+    grid.innerHTML = "";
+
+    if (!list.length) {
+
+        grid.innerHTML = `
+            <div style="
+                grid-column:1/-1;
+                text-align:center;
+                padding:40px;
+                color:#8992a5;
+            ">
+                O'yin topilmadi 😔
+            </div>
+        `;
+
+        return;
+    }
+
+    list.forEach(game => {
+
+        const card = document.createElement("div");
+
+        card.className = "game-card";
+
+        card.onclick = () => openGame(game.id);
+
+        card.innerHTML = `
             <div class="game-icon">
                 ${game.icon}
             </div>
@@ -65,136 +93,239 @@ function renderGames() {
             <div class="game-name">
                 ${game.name}
             </div>
+
+            <div class="game-category">
+                ${game.category}
+            </div>
+
+            <div class="game-arrow">
+                ›
+            </div>
         `;
 
-        element.onclick = () =>
-            openGame(game.id);
+        grid.appendChild(card);
 
-        container.appendChild(element);
     });
 }
 
 
-// =====================================================
-// OPEN GAME
-// =====================================================
+// =========================================================
+// SEARCH
+// =========================================================
 
-function openGame(id) {
+function searchGames() {
 
-    selectedGame =
-        games.find(game => game.id === id);
+    const value =
+        document
+            .getElementById("gameSearch")
+            .value
+            .toLowerCase()
+            .trim();
 
-    if (!selectedGame) return;
+    const filtered = games.filter(game => {
 
-    selectedPackage = null;
+        const name =
+            game.name.toLowerCase();
 
-    document.getElementById("home")
-        .classList.add("hidden");
+        const category =
+            game.category.toLowerCase();
 
-    document.getElementById("gamePage")
-        .classList.remove("hidden");
+        const matchesSearch =
+            name.includes(value) ||
+            category.includes(value);
 
-    document.getElementById("servicePage")
-        .classList.add("hidden");
+        const matchesCategory =
+            currentCategory === "all" ||
+            game.category === currentCategory;
 
-    document.getElementById("gameTitle").innerHTML = `
-        <h1>
-            ${selectedGame.icon}
-            ${selectedGame.name}
-        </h1>
-    `;
+        return matchesSearch && matchesCategory;
 
-    document.getElementById("playerId").value = "";
+    });
 
-    renderPackages();
+    renderGames(filtered);
 }
 
 
-// =====================================================
-// PACKAGES
-// =====================================================
+// =========================================================
+// CATEGORY
+// =========================================================
 
-function renderPackages() {
+function filterCategory(category, button) {
 
-    const container =
-        document.getElementById("packages");
+    currentCategory = category;
 
-    container.innerHTML = "";
+    document
+        .querySelectorAll(".category")
+        .forEach(btn => btn.classList.remove("active"));
 
-    selectedGame.packages.forEach(pkg => {
+    button.classList.add("active");
 
-        const element =
-            document.createElement("div");
+    searchGames();
+}
 
-        element.className = "package";
 
-        element.innerHTML = `
+// =========================================================
+// OPEN GAME
+// =========================================================
+
+function openGame(gameId) {
+
+    currentGame =
+        games.find(game => game.id === gameId);
+
+    if (!currentGame) return;
+
+    selectedPackage = null;
+
+    const detail =
+        document.getElementById("gameDetail");
+
+    detail.innerHTML = `
+
+        <div class="detail-header">
+
+            <div class="detail-icon">
+                ${currentGame.icon}
+            </div>
+
+            <div>
+
+                <h1>
+                    ${currentGame.name}
+                </h1>
+
+                <p>
+                    ${currentGame.category}
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <label class="field-label">
+            Player ID / UID
+        </label>
+
+        <input
+            id="playerId"
+            class="player-input"
+            placeholder="Player ID ni kiriting"
+            autocomplete="off"
+        >
+
+
+        <div class="package-title">
+            Paketni tanlang
+        </div>
+
+        <div
+            id="packageGrid"
+            class="package-grid"
+        ></div>
+
+
+        <button
+            class="buy-button"
+            onclick="createOrder()"
+        >
+            Buyurtma berish
+        </button>
+
+    `;
+
+
+    const packageGrid =
+        document.getElementById("packageGrid");
+
+
+    currentGame.packages.forEach((pkg, index) => {
+
+        const item =
+            document.createElement("button");
+
+        item.className = "package";
+
+        item.innerHTML = `
             <div class="package-name">
                 ${pkg.name}
             </div>
 
             <div class="package-price">
-                ${formatPrice(pkg.price)} UZS
+                ${formatMoney(pkg.price + 200)} UZS
             </div>
         `;
 
-        element.onclick = () => {
+        item.onclick = () => {
+
+            selectedPackage = pkg;
 
             document
                 .querySelectorAll(".package")
-                .forEach(item =>
-                    item.classList.remove("selected")
+                .forEach(el =>
+                    el.classList.remove("selected")
                 );
 
-            element.classList.add("selected");
+            item.classList.add("selected");
 
-            selectedPackage = pkg;
         };
 
-        container.appendChild(element);
+        packageGrid.appendChild(item);
+
     });
+
+
+    showPage("game");
 }
 
 
-// =====================================================
+// =========================================================
 // CREATE ORDER
-// =====================================================
+// =========================================================
 
 async function createOrder() {
 
+    if (!telegramUser) {
+
+        showAlert(
+            "Mini App Telegram ichida ochilishi kerak."
+        );
+
+        return;
+    }
+
+
     const playerId =
-        document.getElementById("playerId")
+        document
+            .getElementById("playerId")
             .value
             .trim();
 
+
     if (!playerId) {
 
-        tg.showAlert(
-            "Player ID / UID ni kiriting!"
+        showAlert(
+            "Avval Player ID / UID kiriting."
         );
 
         return;
     }
+
 
     if (!selectedPackage) {
 
-        tg.showAlert(
-            "Avval paketni tanlang!"
+        showAlert(
+            "Avval paketni tanlang."
         );
 
         return;
     }
 
-    if (!tg.initData) {
-
-        tg.showAlert(
-            "Mini App Telegram ichidan ochilishi kerak."
-        );
-
-        return;
-    }
 
     try {
+
+        tg.MainButton.showProgress();
+
 
         const response =
             await fetch("/api/order", {
@@ -202,157 +333,456 @@ async function createOrder() {
                 method: "POST",
 
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type":
+                        "application/json"
                 },
 
                 body: JSON.stringify({
 
                     initData: tg.initData,
 
-                    service: "game",
+                    game: currentGame.id,
 
-                    game: selectedGame.name,
+                    package:
+                        selectedPackage.name,
 
-                    player_id: playerId,
-
-                    package: selectedPackage.name,
-
-                    price: selectedPackage.price
+                    player_id:
+                        playerId
 
                 })
+
             });
 
-        const result =
+
+        const data =
             await response.json();
+
 
         if (!response.ok) {
 
             throw new Error(
-                result.detail || "Xatolik"
+                data.detail ||
+                "Buyurtma yaratilmadi"
             );
+
         }
 
-        tg.showAlert(
-            `✅ Buyurtma #${result.order_id} qabul qilindi!`
+
+        showAlert(
+            `Buyurtma #${data.order_id} yaratildi!\n\n` +
+            `Summa: ${formatMoney(data.price)} UZS\n\n` +
+            `Hozircha bu demo bosqich. ` +
+            `Haqiqiy to'lov keyingi bosqichda ulanadi.`
         );
 
-        goHome();
+
+        loadOrders();
+
+    } catch (error) {
+
+        showAlert(error.message);
+
+    } finally {
+
+        tg.MainButton.hideProgress();
+
+    }
+}
+
+
+// =========================================================
+// ORDERS
+// =========================================================
+
+async function loadOrders() {
+
+    const userId = getUserId();
+
+    if (!userId) return;
+
+    try {
+
+        const response =
+            await fetch(
+                `/api/orders/${userId}`
+            );
+
+        const orders =
+            await response.json();
+
+        renderOrders(orders);
+
+        document
+            .getElementById("profileOrders")
+            .textContent = orders.length;
 
     } catch (error) {
 
         console.error(error);
 
-        tg.showAlert(
-            "❌ Buyurtma yuborilmadi: " +
-            error.message
+    }
+}
+
+
+function renderOrders(orders) {
+
+    const container =
+        document.getElementById("ordersList");
+
+
+    if (!orders.length) {
+
+        container.innerHTML = `
+            <div class="empty-orders">
+
+                <div>📦</div>
+
+                <p>
+                    Hozircha buyurtmalar yo'q.
+                </p>
+
+            </div>
+        `;
+
+        return;
+    }
+
+
+    container.innerHTML = "";
+
+
+    orders.forEach(order => {
+
+        const card =
+            document.createElement("div");
+
+        card.className = "order-card";
+
+
+        let statusText =
+            "⏳ Kutilmoqda";
+
+
+        if (order.status === "completed") {
+            statusText = "✅ Bajarildi";
+        }
+
+        if (order.status === "processing") {
+            statusText = "🔄 Jarayonda";
+        }
+
+        if (order.status === "cancelled") {
+            statusText = "❌ Bekor qilindi";
+        }
+
+
+        card.innerHTML = `
+
+            <div class="order-top">
+
+                <span class="order-id">
+                    #${order.id}
+                </span>
+
+                <span class="order-status">
+                    ${statusText}
+                </span>
+
+            </div>
+
+
+            <div class="order-name">
+                ${order.product_name}
+            </div>
+
+            <div class="order-package">
+                ${order.package}
+            </div>
+
+            <div class="order-price">
+                ${formatMoney(order.price)} UZS
+            </div>
+
+        `;
+
+
+        container.appendChild(card);
+
+    });
+}
+
+
+// =========================================================
+// PROFILE
+// =========================================================
+
+function updateProfile() {
+
+    if (!telegramUser) return;
+
+
+    const firstName =
+        telegramUser.first_name || "Foydalanuvchi";
+
+    const lastName =
+        telegramUser.last_name || "";
+
+    document
+        .getElementById("profileName")
+        .textContent =
+            `${firstName} ${lastName}`.trim();
+
+
+    document
+        .getElementById("profileUsername")
+        .textContent =
+            telegramUser.username
+                ? `@${telegramUser.username}`
+                : "Username yo'q";
+
+
+    document
+        .getElementById("profileId")
+        .textContent =
+            telegramUser.id;
+
+
+    const avatar =
+        document.getElementById("profileAvatar");
+
+
+    if (telegramUser.photo_url) {
+
+        avatar.innerHTML = `
+            <img
+                src="${telegramUser.photo_url}"
+                style="
+                    width:100%;
+                    height:100%;
+                    border-radius:50%;
+                    object-fit:cover;
+                "
+            >
+        `;
+
+    }
+
+}
+
+
+// =========================================================
+// PAGE NAVIGATION
+// =========================================================
+
+function showPage(page) {
+
+    document
+        .querySelectorAll(".page")
+        .forEach(p =>
+            p.classList.remove("active")
         );
+
+
+    const pageElement =
+        document.getElementById(
+            `${page}Page`
+        );
+
+
+    if (pageElement) {
+        pageElement.classList.add("active");
     }
+
+
+    document
+        .querySelectorAll(".nav-item")
+        .forEach(item =>
+            item.classList.remove("active")
+        );
+
+
+    if (page === "home") {
+
+        document
+            .getElementById("navHome")
+            .classList.add("active");
+
+    }
+
+    if (page === "telegram") {
+
+        document
+            .getElementById("navTelegram")
+            .classList.add("active");
+
+    }
+
+    if (page === "orders") {
+
+        document
+            .getElementById("navOrders")
+            .classList.add("active");
+
+        loadOrders();
+
+    }
+
+    if (page === "profile") {
+
+        document
+            .getElementById("navProfile")
+            .classList.add("active");
+
+        loadOrders();
+
+    }
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
 }
 
 
-// =====================================================
-// SERVICES
-// =====================================================
+// =========================================================
+// TELEGRAM STARS
+// =========================================================
 
-function openService(type) {
+function openStars() {
 
-    document.getElementById("home")
-        .classList.add("hidden");
+    showModal(`
+        <div style="text-align:center;padding:20px 0">
 
-    document.getElementById("gamePage")
-        .classList.add("hidden");
-
-    document.getElementById("servicePage")
-        .classList.remove("hidden");
-
-    const content =
-        document.getElementById("serviceContent");
-
-    if (type === "stars") {
-
-        content.innerHTML = `
-            <div class="service-box">
-
-                <div class="big">⭐</div>
-
-                <h1>
-                    Telegram Stars
-                </h1>
-
-                <p>
-                    Telegram Stars sotib olish
-                    xizmati.
-                </p>
-
-                <p>
-                    To‘lov va avtomatik yetkazib
-                    berish moduli keyingi bosqichda
-                    rasmiy tizim orqali ulanadi.
-                </p>
-
+            <div style="font-size:55px">
+                ⭐
             </div>
-        `;
-    }
 
-    if (type === "premium") {
+            <h2 style="margin-top:10px">
+                Telegram Stars
+            </h2>
 
-        content.innerHTML = `
-            <div class="service-box">
+            <p style="
+                color:#8c95a8;
+                font-size:13px;
+                line-height:1.5;
+                margin-top:10px;
+            ">
+                Telegram Stars raqamli xizmatlar
+                uchun ishlatiladigan virtual birlik.
+            </p>
 
-                <div class="big">💎</div>
+            <button
+                class="buy-button"
+                onclick="closeModal()"
+            >
+                Tushunarli
+            </button>
 
-                <h1>
-                    Telegram Premium
-                </h1>
-
-                <p>
-                    Telegram Premium sotib olish
-                    xizmati.
-                </p>
-
-                <p>
-                    To‘lov va yetkazib berish moduli
-                    keyingi bosqichda rasmiy tizim
-                    orqali ulanadi.
-                </p>
-
-            </div>
-        `;
-    }
+        </div>
+    `);
 }
 
 
-// =====================================================
-// HOME
-// =====================================================
+// =========================================================
+// PREMIUM
+// =========================================================
 
-function goHome() {
+function openPremium() {
 
-    document.getElementById("gamePage")
-        .classList.add("hidden");
+    showModal(`
+        <div style="text-align:center;padding:20px 0">
 
-    document.getElementById("servicePage")
-        .classList.add("hidden");
+            <div style="font-size:55px">
+                💎
+            </div>
 
-    document.getElementById("home")
+            <h2 style="margin-top:10px">
+                Telegram Premium
+            </h2>
+
+            <p style="
+                color:#8c95a8;
+                font-size:13px;
+                line-height:1.5;
+                margin-top:10px;
+            ">
+                Premium uchun haqiqiy sotib olish
+                tizimi keyingi bosqichda ulanadi.
+            </p>
+
+            <button
+                class="buy-button"
+                onclick="closeModal()"
+            >
+                Tushunarli
+            </button>
+
+        </div>
+    `);
+}
+
+
+// =========================================================
+// MODAL
+// =========================================================
+
+function showModal(html) {
+
+    document
+        .getElementById("modalContent")
+        .innerHTML = html;
+
+    document
+        .getElementById("gameModal")
         .classList.remove("hidden");
 }
 
 
-// =====================================================
-// PRICE
-// =====================================================
+function closeModal() {
 
-function formatPrice(price) {
-
-    return new Intl.NumberFormat(
-        "uz-UZ"
-    ).format(price);
+    document
+        .getElementById("gameModal")
+        .classList.add("hidden");
 }
 
 
-// =====================================================
-// START
-// =====================================================
+// =========================================================
+// ALERT
+// =========================================================
 
-loadGames();
+function showAlert(message) {
+
+    if (tg.showAlert) {
+
+        tg.showAlert(message);
+
+    } else {
+
+        alert(message);
+
+    }
+}
+
+
+// =========================================================
+// HELP
+// =========================================================
+
+function showHelp() {
+
+    showAlert(
+        "DonatUZ yordam xizmati tez orada ishga tushadi."
+    );
+}
+
+
+// =========================================================
+// MONEY
+// =========================================================
+
+function formatMoney(number) {
+
+    return Number(number)
+        .toLocaleString("uz-UZ");
+
+}
