@@ -11,363 +11,127 @@
     <title>DonatUZ</title>
 
     <link rel="stylesheet" href="/style.css">
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 
 <body>
 
-<div id="app">
+<div class="app">
 
     <!-- HEADER -->
 
-    <header class="topbar">
+    <header class="header">
 
-        <div class="brand">
-            <div class="brand-logo">D</div>
-
-            <div>
-                <div class="brand-name">DonatUZ</div>
-                <div class="brand-subtitle">Games & Stars</div>
+        <div>
+            <div class="logo">DONAT<span>UZ</span></div>
+            <div class="subtitle">
+                Games • Stars • Premium
             </div>
         </div>
 
-        <button
-            class="icon-button"
-            onclick="openProfile()"
-        >
+        <div class="user-avatar" id="userAvatar">
             👤
-        </button>
+        </div>
 
     </header>
 
 
-    <!-- HOME -->
+    <!-- BALANCE CARD -->
 
-    <main id="homePage" class="page active">
+    <section class="hero-card">
 
-        <section class="hero">
+        <div class="hero-text">
+            <small>DONAT UZ</small>
 
-            <div class="hero-text">
+            <h1>
+                O'yinlaringizga<br>
+                <span>donat qiling 🎮</span>
+            </h1>
 
-                <span class="hero-small">
-                    ⚡ TEZKOR DONAT
-                </span>
-
-                <h1>
-                    Sevimli o‘yinlaringizga
-                    <span>donat qiling</span>
-                </h1>
-
-                <p>
-                    O‘yinlar, Telegram Stars va Premium
-                    xizmatlari bir joyda.
-                </p>
-
-            </div>
-
-            <div class="hero-icon">
-                🎮
-            </div>
-
-        </section>
-
-
-        <!-- SEARCH -->
-
-        <div class="search-box">
-
-            <span>🔎</span>
-
-            <input
-                id="searchInput"
-                type="text"
-                placeholder="O‘yinni qidiring..."
-                oninput="searchGames()"
-            >
-
+            <p>
+                Tez, qulay va zamonaviy
+            </p>
         </div>
 
-
-        <!-- CATEGORIES -->
-
-        <div class="section-header">
-
-            <h2>Kategoriyalar</h2>
-
+        <div class="hero-icon">
+            🎮
         </div>
 
-        <div
-            id="categories"
-            class="categories"
-        ></div>
+    </section>
 
 
-        <!-- POPULAR -->
+    <!-- SEARCH -->
 
-        <div class="section-header">
+    <div class="search-box">
 
-            <h2>Mashhur o‘yinlar</h2>
+        <span>🔎</span>
 
-            <button onclick="showAllGames()">
-                Barchasi
-            </button>
+        <input
+            type="text"
+            id="searchInput"
+            placeholder="O'yinni qidiring..."
+        >
 
-        </div>
-
-        <div
-            id="popularGames"
-            class="games-grid"
-        ></div>
+    </div>
 
 
-        <!-- ALL GAMES -->
+    <!-- CATEGORY -->
 
-        <div class="section-header">
+    <div class="categories">
 
-            <h2>Barcha o‘yinlar</h2>
+        <button
+            class="category active"
+            data-category="games"
+        >
+            🎮 O'yinlar
+        </button>
 
+        <button
+            class="category"
+            data-category="telegram"
+        >
+            ⭐ Telegram
+        </button>
+
+    </div>
+
+
+    <!-- GAMES -->
+
+    <section id="gamesSection">
+
+        <div class="section-title">
+            <h2>🔥 Mashhur o'yinlar</h2>
         </div>
 
         <div
             id="gamesGrid"
             class="games-grid"
-        ></div>
+        >
+        </div>
 
-    </main>
+    </section>
 
 
     <!-- TELEGRAM -->
 
-    <main id="telegramPage" class="page">
+    <section
+        id="telegramSection"
+        style="display:none;"
+    >
 
-        <div class="page-title">
-
-            <span>✈️</span>
-
-            <div>
-                <h1>Telegram</h1>
-                <p>Telegram xizmatlari</p>
-            </div>
-
-        </div>
-
-
-        <div
-            class="service-card stars-card"
-            onclick="openTelegramProduct('stars')"
-        >
-
-            <div class="service-icon">
-                ⭐
-            </div>
-
-            <div class="service-info">
-                <h3>Telegram Stars</h3>
-
-                <p>
-                    Stars paketlarini ko‘rish
-                </p>
-            </div>
-
-            <div class="arrow">
-                →
-            </div>
-
-        </div>
-
-
-        <div
-            class="service-card premium-card"
-            onclick="openTelegramProduct('premium')"
-        >
-
-            <div class="service-icon">
-                💎
-            </div>
-
-            <div class="service-info">
-                <h3>Telegram Premium</h3>
-
-                <p>
-                    Premium paketlari
-                </p>
-            </div>
-
-            <div class="arrow">
-                →
-            </div>
-
-        </div>
-
-
-        <div class="info-box">
-
-            <div class="info-icon">
-                ℹ️
-            </div>
-
-            <div>
-                <b>Muhim</b>
-
-                <p>
-                    Telegram raqamli xizmatlarining haqiqiy
-                    to‘lovi Telegram'ning rasmiy Stars
-                    mexanizmi orqali amalga oshiriladi.
-                </p>
-            </div>
-
-        </div>
-
-    </main>
-
-
-    <!-- ORDERS -->
-
-    <main id="ordersPage" class="page">
-
-        <div class="page-title">
-
-            <span>📦</span>
-
-            <div>
-                <h1>Buyurtmalar</h1>
-                <p>Buyurtmalaringiz tarixi</p>
-            </div>
-
+        <div class="section-title">
+            <h2>⭐ Telegram xizmatlari</h2>
         </div>
 
         <div
-            id="ordersList"
-            class="orders-list"
-        ></div>
-
-    </main>
-
-
-    <!-- PROFILE -->
-
-    <main id="profilePage" class="page">
-
-        <div class="profile-header">
-
-            <div
-                id="profileAvatar"
-                class="profile-avatar"
-            >
-                👤
-            </div>
-
-            <div>
-
-                <h2 id="profileName">
-                    Foydalanuvchi
-                </h2>
-
-                <p id="profileUsername">
-                    @username
-                </p>
-
-            </div>
-
+            id="telegramGrid"
+            class="telegram-grid"
+        >
         </div>
 
-
-        <div class="profile-card">
-
-            <div class="profile-row">
-
-                <span>ID</span>
-
-                <b id="profileId">
-                    —
-                </b>
-
-            </div>
-
-
-            <div class="profile-row">
-
-                <span>Buyurtmalar</span>
-
-                <b id="profileOrderCount">
-                    0
-                </b>
-
-            </div>
-
-        </div>
-
-
-        <div class="profile-menu">
-
-            <button onclick="showSupport()">
-                <span>💬</span>
-                Yordam
-                <b>›</b>
-            </button>
-
-            <button onclick="showAbout()">
-                <span>ℹ️</span>
-                DonatUZ haqida
-                <b>›</b>
-            </button>
-
-        </div>
-
-    </main>
-
-
-    <!-- BOTTOM NAV -->
-
-    <nav class="bottom-nav">
-
-        <button
-            class="nav-item active"
-            data-page="homePage"
-            onclick="navigate('homePage', this)"
-        >
-
-            <span>🎮</span>
-            <small>Games</small>
-
-        </button>
-
-
-        <button
-            class="nav-item"
-            data-page="telegramPage"
-            onclick="navigate('telegramPage', this)"
-        >
-
-            <span>✈️</span>
-            <small>Telegram</small>
-
-        </button>
-
-
-        <button
-            class="nav-item"
-            data-page="ordersPage"
-            onclick="navigate('ordersPage', this)"
-        >
-
-            <span>📦</span>
-            <small>Orders</small>
-
-        </button>
-
-
-        <button
-            class="nav-item"
-            data-page="profilePage"
-            onclick="navigate('profilePage', this)"
-        >
-
-            <span>👤</span>
-            <small>Profile</small>
-
-        </button>
-
-    </nav>
+    </section>
 
 
     <!-- MODAL -->
@@ -375,31 +139,61 @@
     <div
         id="modal"
         class="modal hidden"
-        onclick="closeModal(event)"
     >
 
-        <div
-            class="modal-content"
-            onclick="event.stopPropagation()"
-        >
+        <div class="modal-content">
 
             <button
-                class="modal-close"
-                onclick="closeModal()"
+                id="closeModal"
+                class="close-button"
             >
-                ×
+                ✕
             </button>
 
-            <div id="modalBody"></div>
+            <div id="modalIcon"></div>
+
+            <h2 id="modalTitle">
+                O'yin
+            </h2>
+
+            <p id="modalDescription">
+                Player ID kiriting
+            </p>
+
+            <input
+                id="playerId"
+                class="player-input"
+                type="text"
+                placeholder="Player ID / UID"
+            >
+
+            <div id="priceList"></div>
+
+            <button
+                id="orderButton"
+                class="order-button"
+            >
+                Buyurtma berish
+            </button>
 
         </div>
 
     </div>
 
+
+    <!-- LOADING -->
+
+    <div
+        id="loading"
+        class="loading hidden"
+    >
+        <div class="loader"></div>
+        <p>Yuklanmoqda...</p>
+    </div>
+
+
 </div>
 
-
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="/app.js"></script>
 
 </body>
