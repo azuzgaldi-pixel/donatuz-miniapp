@@ -5,7 +5,7 @@
 
     <meta
         name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     >
 
     <title>DonatUZ</title>
@@ -17,154 +17,435 @@
 
 <body>
 
-<div class="app">
+<div id="app">
 
-    <header>
-        <div>
-            <div class="logo">
-                DONAT<span>UZ</span>
-            </div>
+    <!-- HEADER -->
 
-            <div class="sub">
-                Games • Stars • Premium
+    <header class="topbar">
+
+        <div class="brand">
+            <div class="brand-logo">D</div>
+
+            <div>
+                <div class="brand-name">DonatUZ</div>
+                <div class="brand-subtitle">Games & Stars</div>
             </div>
         </div>
 
-        <div class="avatar">🎮</div>
+        <button
+            class="profile-mini"
+            onclick="showPage('profile')"
+        >
+            👤
+        </button>
+
     </header>
 
 
-    <section class="hero">
+    <!-- HOME -->
 
-        <div>
-            <div class="badge">⚡ FAST & SIMPLE</div>
+    <main id="homePage" class="page active">
 
-            <h1>
-                Donat qilish<br>
-                endi juda oson.
-            </h1>
+        <section class="hero">
 
-            <p>
-                Sevimli o‘yinlaringizga tez va qulay
-                tarzda donat qiling.
-            </p>
+            <div class="hero-text">
+
+                <div class="hero-badge">
+                    ⚡ TEZKOR DONAT
+                </div>
+
+                <h1>
+                    O'yinlaringizni<br>
+                    <span>kuchaytiring</span>
+                </h1>
+
+                <p>
+                    Sevimli o'yinlaringiz uchun
+                    qulay va tezkor donat.
+                </p>
+
+            </div>
+
+            <div class="hero-icon">
+                🎮
+            </div>
+
+        </section>
+
+
+        <!-- SEARCH -->
+
+        <div class="search-box">
+
+            <span>🔎</span>
+
+            <input
+                id="gameSearch"
+                type="text"
+                placeholder="O'yin qidirish..."
+                oninput="searchGames()"
+            >
+
         </div>
 
-        <div class="hero-icon">
-            🎮
+
+        <!-- CATEGORIES -->
+
+        <div class="categories">
+
+            <button
+                class="category active"
+                onclick="filterCategory('all', this)"
+            >
+                Hammasi
+            </button>
+
+            <button
+                class="category"
+                onclick="filterCategory('Battle Royale', this)"
+            >
+                Battle Royale
+            </button>
+
+            <button
+                class="category"
+                onclick="filterCategory('Shooter', this)"
+            >
+                Shooter
+            </button>
+
+            <button
+                class="category"
+                onclick="filterCategory('Sports', this)"
+            >
+                Sports
+            </button>
+
+            <button
+                class="category"
+                onclick="filterCategory('MOBA', this)"
+            >
+                MOBA
+            </button>
+
         </div>
 
-    </section>
+
+        <!-- GAMES -->
+
+        <section>
+
+            <div class="section-title">
+
+                <div>
+                    <h2>🎮 O'yinlar</h2>
+                    <p>20+ mashhur o'yin</p>
+                </div>
+
+            </div>
+
+            <div
+                id="gamesGrid"
+                class="games-grid"
+            ></div>
+
+        </section>
+
+    </main>
 
 
-    <h2>Xizmatlar</h2>
+    <!-- GAME DETAIL -->
 
-    <div class="services">
+    <main
+        id="gamePage"
+        class="page"
+    >
 
         <button
-            class="service stars"
-            onclick="openService('stars')"
+            class="back-button"
+            onclick="showPage('home')"
         >
-            <span>⭐</span>
-
-            <div>
-                <b>Telegram Stars</b>
-                <small>Stars sotib olish</small>
-            </div>
+            ← Orqaga
         </button>
-
-
-        <button
-            class="service premium"
-            onclick="openService('premium')"
-        >
-            <span>💎</span>
-
-            <div>
-                <b>Telegram Premium</b>
-                <small>Premium sotib olish</small>
-            </div>
-        </button>
-
-    </div>
-
-
-    <div id="home">
-
-        <h2>🎮 O‘yinlar</h2>
 
         <div
-            id="games"
-            class="games"
-        >
-            <div class="loading">
-                Yuklanmoqda...
+            id="gameDetail"
+            class="game-detail"
+        ></div>
+
+    </main>
+
+
+    <!-- TELEGRAM -->
+
+    <main
+        id="telegramPage"
+        class="page"
+    >
+
+        <div class="page-heading">
+
+            <div class="heading-icon">
+                ⭐
             </div>
+
+            <div>
+                <h1>Telegram</h1>
+                <p>Telegram xizmatlari</p>
+            </div>
+
+        </div>
+
+
+        <div class="service-card">
+
+            <div class="service-icon stars">
+                ⭐
+            </div>
+
+            <div class="service-info">
+
+                <h2>Telegram Stars</h2>
+
+                <p>
+                    Telegram Stars bilan
+                    raqamli xizmatlardan foydalaning.
+                </p>
+
+            </div>
+
+            <button
+                class="service-button"
+                onclick="openStars()"
+            >
+                Ochish
+            </button>
+
+        </div>
+
+
+        <div class="service-card">
+
+            <div class="service-icon premium">
+                💎
+            </div>
+
+            <div class="service-info">
+
+                <h2>Telegram Premium</h2>
+
+                <p>
+                    Premium imkoniyatlari haqida
+                    ma'lumot oling.
+                </p>
+
+            </div>
+
+            <button
+                class="service-button"
+                onclick="openPremium()"
+            >
+                Ochish
+            </button>
+
+        </div>
+
+
+        <div class="info-box">
+
+            <strong>ℹ️ Muhim</strong>
+
+            <p>
+                Haqiqiy Telegram to'lovlari
+                keyingi bosqichda Telegram Stars
+                tizimi orqali ulanadi.
+            </p>
+
+        </div>
+
+    </main>
+
+
+    <!-- ORDERS -->
+
+    <main
+        id="ordersPage"
+        class="page"
+    >
+
+        <div class="page-heading">
+
+            <div class="heading-icon">
+                📦
+            </div>
+
+            <div>
+                <h1>Buyurtmalar</h1>
+                <p>Sizning buyurtmalaringiz</p>
+            </div>
+
+        </div>
+
+        <div id="ordersList"></div>
+
+    </main>
+
+
+    <!-- PROFILE -->
+
+    <main
+        id="profilePage"
+        class="page"
+    >
+
+        <div class="profile-card">
+
+            <div
+                id="profileAvatar"
+                class="big-avatar"
+            >
+                👤
+            </div>
+
+            <h2 id="profileName">
+                Foydalanuvchi
+            </h2>
+
+            <p id="profileUsername">
+                @username
+            </p>
+
+        </div>
+
+
+        <div class="profile-stats">
+
+            <div class="stat-card">
+
+                <span>🆔</span>
+
+                <strong id="profileId">
+                    -
+                </strong>
+
+                <small>Telegram ID</small>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <span>📦</span>
+
+                <strong id="profileOrders">
+                    0
+                </strong>
+
+                <small>Buyurtmalar</small>
+
+            </div>
+
+        </div>
+
+
+        <div class="settings-list">
+
+            <div class="setting">
+                <span>🌐 Til</span>
+                <strong>O'zbekcha</strong>
+            </div>
+
+            <div class="setting">
+                <span>🛡️ Xavfsizlik</span>
+                <strong>Telegram</strong>
+            </div>
+
+            <div
+                class="setting clickable"
+                onclick="showHelp()"
+            >
+                <span>❓ Yordam</span>
+                <strong>›</strong>
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <!-- GAME MODAL -->
+
+    <div
+        id="gameModal"
+        class="modal hidden"
+    >
+
+        <div class="modal-overlay"
+             onclick="closeModal()">
+        </div>
+
+        <div class="modal-card">
+
+            <button
+                class="modal-close"
+                onclick="closeModal()"
+            >
+                ×
+            </button>
+
+            <div id="modalContent"></div>
+
         </div>
 
     </div>
 
 
-    <section
-        id="gamePage"
-        class="page hidden"
-    >
+    <!-- BOTTOM NAV -->
+
+    <nav class="bottom-nav">
 
         <button
-            class="back"
-            onclick="goHome()"
+            id="navHome"
+            class="nav-item active"
+            onclick="showPage('home')"
         >
-            ← Orqaga
+            <span>🎮</span>
+            <small>Games</small>
         </button>
 
-        <div id="gameTitle"></div>
-
-        <label>Player ID / UID</label>
-
-        <input
-            id="playerId"
-            type="text"
-            placeholder="Player ID / UID"
-        >
-
-        <h3>Paketni tanlang</h3>
-
-        <div id="packages"></div>
 
         <button
-            class="main-btn"
-            onclick="createOrder()"
+            id="navTelegram"
+            class="nav-item"
+            onclick="showPage('telegram')"
         >
-            Buyurtma berish
+            <span>⭐</span>
+            <small>Telegram</small>
         </button>
 
-    </section>
-
-
-    <section
-        id="servicePage"
-        class="page hidden"
-    >
 
         <button
-            class="back"
-            onclick="goHome()"
+            id="navOrders"
+            class="nav-item"
+            onclick="showPage('orders')"
         >
-            ← Orqaga
+            <span>📦</span>
+            <small>Orders</small>
         </button>
 
-        <div id="serviceContent"></div>
 
-    </section>
+        <button
+            id="navProfile"
+            class="nav-item"
+            onclick="showPage('profile')"
+        >
+            <span>👤</span>
+            <small>Profile</small>
+        </button>
 
-
-    <footer>
-        <b>DONATUZ</b>
-        <span>Fast • Simple • Secure</span>
-    </footer>
+    </nav>
 
 </div>
-
 
 <script src="/app.js"></script>
 
