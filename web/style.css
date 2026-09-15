@@ -5,26 +5,32 @@
 }
 
 body {
+    background: #070910;
+    color: #ffffff;
     font-family: Arial, sans-serif;
-    background: #080b12;
-    color: white;
+}
+
+button,
+input {
+    font-family: inherit;
 }
 
 .app {
-    max-width: 650px;
+    width: 100%;
+    max-width: 680px;
     margin: auto;
     padding: 18px;
 }
 
-.header {
+header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 22px;
+    justify-content: space-between;
+    margin-bottom: 20px;
 }
 
 .logo {
-    font-size: 27px;
+    font-size: 28px;
     font-weight: 900;
     letter-spacing: 1px;
 }
@@ -33,43 +39,59 @@ body {
     color: #6c63ff;
 }
 
-.subtitle {
-    color: #858b9c;
-    font-size: 12px;
+.sub {
     margin-top: 4px;
+    color: #777d91;
+    font-size: 12px;
 }
 
 .avatar {
-    width: 46px;
-    height: 46px;
-    border-radius: 15px;
-    background: #171b27;
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    background: #151925;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 23px;
+    font-size: 25px;
 }
 
 .hero {
-    min-height: 180px;
-    border-radius: 25px;
-    padding: 25px;
+    min-height: 200px;
+    padding: 24px;
+    border-radius: 26px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: linear-gradient(135deg, #151a35, #24204d);
-    margin-bottom: 25px;
+    background:
+        linear-gradient(
+            135deg,
+            #171b39,
+            #282052
+        );
     overflow: hidden;
 }
 
-.hero h1 {
-    font-size: 30px;
-    line-height: 1.1;
+.badge {
+    display: inline-block;
+    padding: 7px 10px;
+    border-radius: 20px;
+    background: #ffffff12;
+    color: #aaa5ff;
+    font-size: 10px;
+    font-weight: bold;
     margin-bottom: 12px;
 }
 
+.hero h1 {
+    font-size: 31px;
+    line-height: 1.05;
+}
+
 .hero p {
-    color: #aeb3c2;
+    margin-top: 13px;
+    max-width: 380px;
+    color: #a7adbf;
     line-height: 1.5;
 }
 
@@ -79,118 +101,154 @@ body {
 
 h2 {
     margin: 25px 0 14px;
+    font-size: 20px;
 }
 
-.service-grid {
+.services {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
 }
 
-.service-card {
-    border-radius: 18px;
-    padding: 17px;
+.service {
+    border: 0;
+    color: white;
+    text-align: left;
+    padding: 18px;
+    border-radius: 19px;
     display: flex;
     align-items: center;
     gap: 13px;
     cursor: pointer;
-    transition: .2s;
 }
 
-.service-card:active {
-    transform: scale(.97);
-}
-
-.stars {
-    background: linear-gradient(135deg, #392c00, #18150a);
-}
-
-.premium {
-    background: linear-gradient(135deg, #24204c, #11101d);
-}
-
-.service-icon {
+.service > span {
     font-size: 30px;
 }
 
-.service-card b {
+.service b {
     display: block;
-    margin-bottom: 5px;
+    font-size: 14px;
 }
 
-.service-card span {
-    font-size: 12px;
-    color: #9da3b5;
+.service small {
+    display: block;
+    margin-top: 5px;
+    color: #979dae;
+}
+
+.stars {
+    background: linear-gradient(
+        135deg,
+        #493900,
+        #18140a
+    );
+}
+
+.premium {
+    background: linear-gradient(
+        135deg,
+        #31295c,
+        #141222
+    );
 }
 
 .games {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 11px;
 }
 
 .game {
-    background: #121722;
-    border: 1px solid #202635;
-    border-radius: 17px;
-    padding: 15px;
+    padding: 17px;
+    border-radius: 18px;
+    background: #111520;
+    border: 1px solid #202637;
     cursor: pointer;
-    transition: .2s;
 }
 
-.game:active {
-    transform: scale(.97);
+.game:active,
+.service:active,
+.main-btn:active {
+    transform: scale(.98);
 }
 
 .game-icon {
-    font-size: 30px;
-    margin-bottom: 9px;
+    font-size: 31px;
 }
 
 .game-name {
-    font-weight: bold;
+    margin-top: 9px;
     font-size: 14px;
+    font-weight: bold;
+}
+
+.loading {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 35px;
+    color: #858b9d;
+}
+
+.page {
+    margin-top: 10px;
+}
+
+.hidden {
+    display: none !important;
 }
 
 .back {
-    background: #171c28;
     border: 0;
+    background: #171c29;
     color: white;
-    padding: 11px 16px;
     border-radius: 12px;
-    margin-bottom: 18px;
+    padding: 11px 16px;
     cursor: pointer;
+    margin-bottom: 20px;
 }
 
 label {
     display: block;
-    color: #9da3b5;
+    color: #9299ac;
     margin: 20px 0 8px;
+    font-size: 13px;
 }
 
 input {
     width: 100%;
-    background: #121722;
-    border: 1px solid #293044;
-    color: white;
     padding: 15px;
+    border: 1px solid #293044;
     border-radius: 14px;
+    background: #111520;
+    color: white;
     outline: none;
-    font-size: 15px;
+}
+
+input:focus {
+    border-color: #6c63ff;
+}
+
+#gameTitle h1 {
+    font-size: 24px;
+}
+
+#packages {
+    margin-top: 12px;
 }
 
 .package {
-    background: #121722;
-    border: 1px solid #252c3c;
     padding: 16px;
+    border-radius: 15px;
+    background: #111520;
+    border: 1px solid #252c3d;
     margin-bottom: 10px;
-    border-radius: 14px;
     cursor: pointer;
 }
 
 .package.selected {
     border-color: #6c63ff;
-    background: #19172d;
+    background: #1a1830;
 }
 
 .package-name {
@@ -198,72 +256,70 @@ input {
 }
 
 .package-price {
-    color: #8f88ff;
-    margin-top: 5px;
+    margin-top: 6px;
+    color: #9992ff;
+    font-size: 14px;
 }
 
-.main-button {
+.main-btn {
     width: 100%;
-    border: 0;
     padding: 16px;
+    border: 0;
     border-radius: 15px;
     background: #6c63ff;
     color: white;
     font-size: 16px;
     font-weight: bold;
-    margin-top: 15px;
+    margin-top: 8px;
     cursor: pointer;
 }
 
-.hidden {
-    display: none;
-}
-
-.service-page-box {
-    background: #121722;
+.service-box {
     padding: 25px;
     border-radius: 20px;
+    background: #111520;
 }
 
-.service-page-box h1 {
-    margin-bottom: 12px;
+.service-box .big {
+    font-size: 50px;
 }
 
-.service-page-box p {
-    color: #9da3b5;
-    line-height: 1.5;
-    margin-bottom: 20px;
+.service-box h1 {
+    margin-top: 12px;
+}
+
+.service-box p {
+    margin-top: 12px;
+    color: #9299ac;
+    line-height: 1.6;
 }
 
 footer {
     text-align: center;
-    margin: 35px 0 10px;
-    color: #777d8e;
+    margin: 40px 0 15px;
+    color: #777d8d;
 }
 
-footer span {
+footer b {
     display: block;
-    font-weight: bold;
     color: white;
 }
 
-footer small {
-    display: block;
-    margin-top: 5px;
+footer span {
+    font-size: 11px;
 }
 
 @media (max-width: 450px) {
-
-    .service-grid,
-    .games {
-        grid-template-columns: 1fr 1fr;
-    }
 
     .hero h1 {
         font-size: 25px;
     }
 
     .hero-icon {
-        font-size: 48px;
+        font-size: 50px;
+    }
+
+    .services {
+        grid-template-columns: 1fr;
     }
 }
