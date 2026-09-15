@@ -2,6 +2,7 @@
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
+
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
@@ -18,10 +19,15 @@
 
 <div class="app">
 
-    <header class="header">
+    <header>
         <div>
-            <div class="logo">DONAT<span>UZ</span></div>
-            <div class="subtitle">Games • Stars • Premium</div>
+            <div class="logo">
+                DONAT<span>UZ</span>
+            </div>
+
+            <div class="sub">
+                Games • Stars • Premium
+            </div>
         </div>
 
         <div class="avatar">🎮</div>
@@ -30,8 +36,13 @@
 
     <section class="hero">
 
-        <div class="hero-text">
-            <h1>Donat qilish<br>endi juda oson.</h1>
+        <div>
+            <div class="badge">⚡ FAST & SIMPLE</div>
+
+            <h1>
+                Donat qilish<br>
+                endi juda oson.
+            </h1>
 
             <p>
                 Sevimli o‘yinlaringizga tez va qulay
@@ -39,52 +50,81 @@
             </p>
         </div>
 
-        <div class="hero-icon">⚡</div>
+        <div class="hero-icon">
+            🎮
+        </div>
 
     </section>
 
 
     <h2>Xizmatlar</h2>
 
-    <div class="service-grid">
+    <div class="services">
 
-        <div class="service-card stars" onclick="openService('stars')">
-            <div class="service-icon">⭐</div>
+        <button
+            class="service stars"
+            onclick="openService('stars')"
+        >
+            <span>⭐</span>
+
             <div>
                 <b>Telegram Stars</b>
-                <span>Stars sotib olish</span>
+                <small>Stars sotib olish</small>
             </div>
-        </div>
+        </button>
 
-        <div class="service-card premium" onclick="openService('premium')">
-            <div class="service-icon">💎</div>
+
+        <button
+            class="service premium"
+            onclick="openService('premium')"
+        >
+            <span>💎</span>
+
             <div>
                 <b>Telegram Premium</b>
-                <span>Premium sotib olish</span>
+                <small>Premium sotib olish</small>
+            </div>
+        </button>
+
+    </div>
+
+
+    <div id="home">
+
+        <h2>🎮 O‘yinlar</h2>
+
+        <div
+            id="games"
+            class="games"
+        >
+            <div class="loading">
+                Yuklanmoqda...
             </div>
         </div>
 
     </div>
 
 
-    <h2>🎮 O‘yinlar</h2>
+    <section
+        id="gamePage"
+        class="page hidden"
+    >
 
-    <div id="games" class="games"></div>
-
-
-    <div id="gamePage" class="hidden">
-
-        <button class="back" onclick="closeGame()">
+        <button
+            class="back"
+            onclick="goHome()"
+        >
             ← Orqaga
         </button>
 
-        <div id="selectedGame"></div>
+        <div id="gameTitle"></div>
 
         <label>Player ID / UID</label>
 
         <input
             id="playerId"
-            placeholder="Player ID ni kiriting"
+            type="text"
+            placeholder="Player ID / UID"
         >
 
         <h3>Paketni tanlang</h3>
@@ -92,32 +132,39 @@
         <div id="packages"></div>
 
         <button
-            class="main-button"
+            class="main-btn"
             onclick="createOrder()"
         >
-            Davom etish
+            Buyurtma berish
         </button>
 
-    </div>
+    </section>
 
 
-    <div id="servicePage" class="hidden">
+    <section
+        id="servicePage"
+        class="page hidden"
+    >
 
-        <button class="back" onclick="closeService()">
+        <button
+            class="back"
+            onclick="goHome()"
+        >
             ← Orqaga
         </button>
 
         <div id="serviceContent"></div>
 
-    </div>
+    </section>
 
 
     <footer>
-        <span>DonatUZ</span>
-        <small>Fast • Simple • Secure</small>
+        <b>DONATUZ</b>
+        <span>Fast • Simple • Secure</span>
     </footer>
 
 </div>
+
 
 <script src="/app.js"></script>
 
